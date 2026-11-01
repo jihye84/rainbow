@@ -1,0 +1,1127 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<title>프리즘 무지개</title>
+<meta name="description" content="덧창 틈으로 들어온 햇살 한 줄기 — 프리즘을 돌려 바닥에 무지개를 펼쳐 보세요.">
+<meta name="theme-color" content="#060504">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<script>
+/* 인앱 브라우저(카카오톡·페이스북·인스타그램·네이버·라인 등)에서 열면 기본 브라우저로 */
+(function(){
+  var ua = navigator.userAgent || '';
+  var url = location.href;
+  var isAndroid = /Android/i.test(ua);
+  var isIOS = /iPhone|iPad|iPod/i.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  var inApp = /KAKAOTALK|FBAN|FBAV|FB_IAB|FBIOS|Instagram|NAVER\(inapp|NAVER|Line\/|DaumApps|everytimeApp|BAND\/|Twitter|Threads|; wv\)/i.test(ua);
+  if (!inApp) return;
+  window.__IN_APP__ = true;
+  if (/KAKAOTALK/i.test(ua)) { location.href = 'kakaotalk://web/openExternal?url=' + encodeURIComponent(url); return; }
+  if (/Line\//i.test(ua)) { location.href = url + (url.indexOf('?') < 0 ? '?' : '&') + 'openExternalBrowser=1'; return; }
+  if (isAndroid) {
+    location.href = 'intent://' + url.replace(/^https?:\/\//, '') + '#Intent;scheme=https;package=com.android.chrome;S.browser_fallback_url=' + encodeURIComponent(url) + ';end';
+    return;
+  }
+  if (isIOS) {
+    window.__IOS_INAPP__ = true;
+    try { location.href = 'x-safari-' + url; } catch (e) {}
+  }
+})();
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#f4ead8; --dim:rgba(244,234,216,.62); --glass:rgba(22,17,13,.62); --line:rgba(244,234,216,.16);
+    --gold:#e7c58b;
+    --sat: env(safe-area-inset-top,0px); --sab: env(safe-area-inset-bottom,0px);
+    --sal: env(safe-area-inset-left,0px); --sar: env(safe-area-inset-right,0px);
+    --fs: clamp(11px, min(2.1vh, 3.4vw), 15px);
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#060504;color:var(--ink);
+    font-family:'Gowun Batang','Nanum Myeongjo','AppleMyungjo',serif;overscroll-behavior:none;
+    -webkit-user-select:none;user-select:none;-webkit-touch-callout:none;-webkit-tap-highlight-color:transparent}
+  body{position:fixed;inset:0;height:100dvh}
+  #c{position:fixed;inset:0;width:100%;height:100%;display:block;touch-action:none;cursor:grab}
+  #c.dragging{cursor:grabbing}
+  #vig{position:fixed;inset:0;pointer-events:none;
+    background:radial-gradient(120% 95% at 55% 55%, transparent 55%, rgba(0,0,0,.55) 100%)}
+  button{font-family:inherit;color:inherit}
+
+  #readout{position:fixed;left:calc(14px + var(--sal));top:calc(12px + var(--sat));pointer-events:none;
+    font-size:var(--fs);line-height:1.5;color:var(--dim);text-shadow:0 1px 6px #000;transition:opacity .6s}
+  #readout b{color:var(--ink);font-weight:400;font-variant-numeric:tabular-nums}
+  #best{display:block;color:var(--gold);opacity:0;transition:opacity .5s;min-height:1.5em}
+  #best.on{opacity:1}
+
+  #hint{position:fixed;left:50%;bottom:calc(18px + var(--sab));transform:translateX(-50%);pointer-events:none;
+    font-size:var(--fs);color:var(--ink);background:var(--glass);border:1px solid var(--line);
+    padding:.55em 1.1em;border-radius:99px;white-space:nowrap;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
+    transition:opacity 1.2s;opacity:0}
+  #hint.on{opacity:1}
+
+  #menuBtn{position:fixed;right:calc(14px + var(--sar));bottom:calc(14px + var(--sab));width:46px;height:46px;border-radius:50%;
+    background:var(--glass);border:1px solid var(--line);font-size:20px;line-height:1;cursor:pointer;
+    backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);display:grid;place-items:center;z-index:5}
+  #menuBtn svg{width:22px;height:22px}
+
+  #drawer{position:fixed;right:calc(14px + var(--sar));bottom:calc(70px + var(--sab));z-index:6;
+    width:min(330px, calc(100vw - 28px - var(--sal) - var(--sar)));
+    max-height:calc(100dvh - 90px - var(--sat) - var(--sab));
+    background:rgba(18,14,11,.84);border:1px solid var(--line);border-radius:16px;
+    backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
+    padding:clamp(8px,1.6vh,14px) 14px;font-size:var(--fs);
+    display:flex;flex-direction:column;gap:clamp(5px,1.2vh,11px);
+    transform:translateY(12px) scale(.98);opacity:0;pointer-events:none;transition:.25s ease;transform-origin:100% 100%}
+  #drawer.open{transform:none;opacity:1;pointer-events:auto}
+  .row{display:flex;flex-direction:column;gap:.35em}
+  .lab{color:var(--dim);font-size:.88em;letter-spacing:.02em}
+  .seg{display:flex;gap:4px}
+  .seg button,.tog{flex:1;background:rgba(255,255,255,.05);border:1px solid var(--line);border-radius:9px;
+    padding:.48em .3em;font-size:1em;cursor:pointer;white-space:nowrap;transition:background .2s,border-color .2s}
+  .seg button.on{background:rgba(231,197,139,.2);border-color:rgba(231,197,139,.65);color:#fff}
+  .tog{display:flex;align-items:center;justify-content:space-between;gap:.6em;text-align:left;padding:.5em .75em}
+  .tog small{display:block;color:var(--dim);font-size:.78em;margin-top:.1em;white-space:normal}
+  .tog .sw{flex:none;width:2.3em;height:1.3em;border-radius:99px;background:rgba(255,255,255,.14);position:relative;transition:background .2s}
+  .tog .sw::after{content:'';position:absolute;left:.15em;top:.15em;width:1em;height:1em;border-radius:50%;background:#d9cdb8;transition:transform .2s}
+  .tog.on .sw{background:rgba(231,197,139,.75)}
+  .tog.on .sw::after{transform:translateX(1em);background:#fff}
+  .two{display:grid;grid-template-columns:1fr 1fr;gap:4px}
+  .two button{background:rgba(255,255,255,.05);border:1px solid var(--line);border-radius:9px;padding:.5em .3em;font-size:1em;cursor:pointer}
+  @media (max-height:520px){
+    #drawer{width:min(560px, calc(100vw - 28px));display:grid;grid-template-columns:1fr 1fr;column-gap:12px}
+    .tog small{display:none}
+  }
+
+  #intro{position:fixed;inset:0;z-index:20;display:flex;flex-direction:column;align-items:center;justify-content:center;
+    text-align:center;padding:24px;background:radial-gradient(80% 70% at 50% 45%, rgba(6,5,4,.35), rgba(6,5,4,.88));
+    transition:opacity 1.1s ease}
+  #intro.hide{opacity:0;pointer-events:none}
+  #intro h1{margin:0;font-weight:400;font-size:clamp(28px, min(7vh, 9vw), 56px);letter-spacing:.12em;
+    background:linear-gradient(90deg,#ff6b6b,#ffb26b,#ffe66b,#7be37b,#6bc7ff,#8f7bff,#d27bff);
+    -webkit-background-clip:text;background-clip:text;color:transparent;filter:drop-shadow(0 2px 14px rgba(0,0,0,.6))}
+  #intro p{margin:clamp(10px,2.4vh,22px) 0 clamp(16px,3.6vh,32px);font-size:clamp(13px, min(2.3vh, 3.8vw), 17px);
+    line-height:1.8;color:var(--ink);opacity:.86;text-shadow:0 1px 8px #000;max-width:30em}
+  #go{font-size:clamp(14px, min(2.4vh,4vw), 18px);padding:.75em 2.1em;border-radius:99px;cursor:pointer;
+    background:rgba(255,248,232,.1);border:1px solid rgba(255,240,210,.5);color:#fff;letter-spacing:.08em;
+    backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
+  #go:hover{background:rgba(255,248,232,.18)}
+  #loading{margin-top:14px;font-size:12px;color:var(--dim);min-height:1.2em}
+
+  #inapp{position:fixed;inset:0;z-index:50;display:none;align-items:center;justify-content:center;padding:24px;
+    background:rgba(6,5,4,.94);text-align:center;font-size:15px;line-height:1.8}
+  #inapp.on{display:flex}
+  #inapp .box{max-width:340px}
+  #inapp button{margin-top:16px;padding:.6em 1.4em;border-radius:99px;border:1px solid var(--line);background:rgba(255,255,255,.08);font-size:14px;cursor:pointer}
+  #err{position:fixed;inset:0;z-index:40;display:none;align-items:center;justify-content:center;text-align:center;padding:24px;font-size:15px;line-height:1.8;background:#060504}
+</style>
+<script type="importmap">
+{ "imports": {
+  "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js",
+  "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"
+} }
+</script>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="vig"></div>
+<div id="readout"><span id="dev"></span><span id="best">✦ 최소 편각 — 무지개가 가장 또렷해요</span></div>
+<div id="hint">손가락으로 끌어 프리즘을 돌려 보세요</div>
+
+<button id="menuBtn" aria-label="설정 열기">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M12 3 L21 19 H3 Z"/><path d="M14 11 L22 9.5 M14.6 12.2 L22 12.4 M15.2 13.4 L22 15.3" stroke-width="1.1" opacity=".8"/></svg>
+</button>
+<div id="drawer" role="dialog" aria-label="설정">
+  <div class="row"><span class="lab">햇빛</span>
+    <div class="seg" id="segTime"><button data-v="morning">아침</button><button data-v="noon" class="on">한낮</button><button data-v="evening">노을</button></div>
+  </div>
+  <div class="row"><span class="lab">프리즘</span>
+    <div class="seg" id="segGlass"><button data-v="crown">크라운 유리</button><button data-v="flint" class="on">플린트 유리</button><button data-v="diamond">다이아몬드</button></div>
+  </div>
+  <button class="tog" id="togNewton"><span>뉴턴의 실험<small>거꾸로 놓은 프리즘이 무지개를 다시 흰빛으로 모아요</small></span><span class="sw"></span></button>
+  <button class="tog on" id="togBeam"><span>공기 중 빛줄기<small>먼지에 비친 햇살과 무지갯빛 보기</small></span><span class="sw"></span></button>
+  <button class="tog" id="togTilt"><span>폰 기울여 돌리기<small>프리즘을 손에 쥔 것처럼</small></span><span class="sw"></span></button>
+  <div class="two"><button id="btnFull">전체 화면</button><button id="btnReset">처음 자리로</button></div>
+</div>
+
+<div id="intro">
+  <h1>프리즘 무지개</h1>
+  <p>닫힌 덧창 틈으로 햇살 한 줄기가 들어옵니다.<br>프리즘을 이리저리 돌려 바닥에 무지개를 펼쳐 보세요.</p>
+  <button id="go">햇살 들이기</button>
+  <div id="loading">빛을 모으는 중…</div>
+</div>
+
+<div id="inapp"><div class="box">
+  이 앱 안의 브라우저에서는<br>무지개가 제대로 보이지 않아요.<br><br>
+  오른쪽 아래(또는 위) <b>⋯</b> 메뉴에서<br><b>'Safari로 열기'</b>를 눌러 주세요.
+  <br><button id="copyUrl">주소 복사하기</button><div id="copied" style="font-size:13px;opacity:.7;min-height:1.4em;margin-top:8px"></div>
+</div></div>
+<div id="err"></div>
+
+<script>
+  if (window.__IOS_INAPP__) {
+    setTimeout(function(){
+      document.getElementById('inapp').classList.add('on');
+      document.getElementById('copyUrl').onclick = function(){
+        var done = function(){ document.getElementById('copied').textContent = '복사했어요. Safari 주소창에 붙여 넣어 주세요.'; };
+        if (navigator.clipboard) navigator.clipboard.writeText(location.href).then(done, done); else done();
+      };
+    }, 700);
+  }
+</script>
+
+<script type="module">
+import * as THREE from 'three';
+import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
+import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+
+/* =========================================================
+   1. 빛의 물리 — 파장별 굴절률, 색, 광선 추적
+   ========================================================= */
+const NL = 48;              // 파장 표본 수
+const NU = 15, NV = 5;      // 광선 다발 격자 (가로 폭 × 세로 높이)
+const LAMBDA = Array.from({length: NL}, (_, i) => 400 + 300 * (i + 0.5) / NL);
+const IU_MID = (NU - 1) >> 1, IV_MID = (NV - 1) >> 1;
+
+// CIE 1931 등색함수 (Wyman·Sloan·Shirley 근사) → 선형 sRGB
+function gpk(x, m, s1, s2){ const t = (x - m) / (x < m ? s1 : s2); return Math.exp(-0.5 * t * t); }
+function cie(l){
+  return [
+    1.056*gpk(l,599.8,37.9,31.0) + 0.362*gpk(l,442.0,16.0,26.7) - 0.065*gpk(l,501.1,20.4,26.2),
+    0.821*gpk(l,568.8,46.9,40.5) + 0.286*gpk(l,530.9,16.3,31.1),
+    1.217*gpk(l,437.0,11.8,36.0) + 0.681*gpk(l,459.0,26.0,13.8)
+  ];
+}
+const SPEC = LAMBDA.map(l => {
+  const [X, Y, Z] = cie(l);
+  return [
+    Math.max(0,  3.2406*X - 1.5372*Y - 0.4986*Z),
+    Math.max(0, -0.9689*X + 1.8758*Y + 0.0415*Z),
+    Math.max(0,  0.0557*X - 0.2040*Y + 1.0570*Z)
+  ];
+});
+{ // 모든 파장을 더하면 흰빛(1,1,1)이 되도록 맞춤
+  const s = [0,0,0]; SPEC.forEach(c => { s[0]+=c[0]; s[1]+=c[1]; s[2]+=c[2]; });
+  SPEC.forEach(c => { c[0]/=s[0]; c[1]/=s[1]; c[2]/=s[2]; });
+}
+// 먼지에 비칠 때 쓰는 '순수한 색' (밝기 정규화)
+const HUE = SPEC.map(c => { const m = Math.max(c[0], c[1], c[2]) || 1; return [c[0]/m, c[1]/m, c[2]/m]; });
+
+// 셀마이어 분산식 (λ: µm)
+const GLASS = {
+  crown:   { B:[1.03961212, 0.231792344, 1.01046945], C:[0.00600069867, 0.0200179144, 103.560653], disp: 1.2, tint: 0xffffff },
+  flint:   { B:[1.34533359, 0.209073176, 0.937357162], C:[0.00997743871, 0.0470450767, 111.886764], disp: 3.0, tint: 0xfffcf6 },
+  diamond: { B:[4.3356, 0.3306, 0],                    C:[0.1060*0.1060, 0.1750*0.1750, 1],      disp: 6.0, tint: 0xffffff },
+};
+function sellmeier(g, lnm){
+  const l2 = (lnm/1000) ** 2;
+  let s = 1; for (let k = 0; k < 3; k++) s += g.B[k] * l2 / (l2 - g.C[k]);
+  return Math.sqrt(s);
+}
+
+// 시간대
+const SUNS = {
+  morning: { e: 22, col: [1.00, 0.80, 0.58], E: 8.5, amb: 0.42, sky: [1.0, 0.86, 0.70] },
+  noon:    { e: 28, col: [1.00, 0.97, 0.92], E: 9.0, amb: 0.50, sky: [1.0, 0.98, 0.95] },
+  evening: { e: 17, col: [1.00, 0.55, 0.26], E: 8.0, amb: 0.30, sky: [1.0, 0.58, 0.32] },
+};
+const SUN_AZ = 0.24;                 // 햇빛의 수평 방향 (방 안쪽 → 약간 관찰자 쪽)
+const HORIZ = 1.45;                  // 덧창 틈 ~ 프리즘 수평 거리
+// 방
+const X0 = -3, X1 = 3, Z0 = -3.2, Z1 = 2.2, H = 2.9;
+const SHUT_X = X0 + 0.1;             // 덧창 안쪽 면
+const PC = [-1.5, 0.95, -1.2];       // 프리즘 중심
+const HOLE = [SHUT_X, 1.6, PC[2] - (PC[0] - SHUT_X) * Math.tan(SUN_AZ)];   // 덧창 틈 (높이는 해에 따라)
+// 프리즘 (정삼각 기둥)
+const PS = 0.14, PL = 0.34;
+const INR = PS / (2 * Math.sqrt(3));
+const BEAM_W = 0.026, BEAM_H = 0.25; // 덧창 틈으로 들어오는 빛다발 단면
+const SUN_DISK = 0.0093;             // 태양 시지름 (rad)
+
+// --- 작은 벡터 도구 (배열) ---
+const dot = (a,b) => a[0]*b[0] + a[1]*b[1] + a[2]*b[2];
+const madd = (a,b,s) => [a[0]+b[0]*s, a[1]+b[1]*s, a[2]+b[2]*s];
+const sub = (a,b) => [a[0]-b[0], a[1]-b[1], a[2]-b[2]];
+const cross = (a,b) => [a[1]*b[2]-a[2]*b[1], a[2]*b[0]-a[0]*b[2], a[0]*b[1]-a[1]*b[0]];
+const len = a => Math.hypot(a[0], a[1], a[2]);
+const nrm = a => { const l = len(a) || 1; return [a[0]/l, a[1]/l, a[2]/l]; };
+
+function sunDir(eDeg){
+  const e = eDeg * Math.PI / 180;
+  return [Math.cos(e)*Math.cos(SUN_AZ), -Math.sin(e), Math.cos(e)*Math.sin(SUN_AZ)];
+}
+function prismCenter(){ return PC.slice(); }
+function holeY(eDeg){ return PC[1] + (PC[0] - SHUT_X) / Math.cos(SUN_AZ) * Math.tan(eDeg * Math.PI / 180); }
+
+// 프리즘 면: 로컬 좌표에서 꼭짓점이 +y(90°), 면의 바깥 법선 270°·30°·150°, 양 끝면 ±z
+const C30 = Math.cos(Math.PI/6), S30 = 0.5;
+const LOCAL_PLANES = [[0,-1,0,INR], [C30,S30,0,INR], [-C30,S30,0,INR], [0,0,1,PL/2], [0,0,-1,PL/2]];
+const _v = new THREE.Vector3();
+function prismPlanes(C, q){
+  return LOCAL_PLANES.map(([x,y,z,dd]) => {
+    _v.set(x,y,z).applyQuaternion(q);
+    const n = [_v.x, _v.y, _v.z];
+    return { n, d: dd + dot(n, C) };
+  });
+}
+
+function fresnel(cosi, cost, n1, n2){
+  const rs = (n1*cosi - n2*cost) / (n1*cosi + n2*cost);
+  const rp = (n1*cost - n2*cosi) / (n1*cost + n2*cosi);
+  return 0.5 * (rs*rs + rp*rp);
+}
+function roomExit(p, d){
+  let t = 1e9;
+  if (d[0] > 1e-9) t = Math.min(t, (X1 - p[0]) / d[0]); else if (d[0] < -1e-9) t = Math.min(t, (X0 - p[0]) / d[0]);
+  if (d[1] > 1e-9) t = Math.min(t, (H  - p[1]) / d[1]); else if (d[1] < -1e-9) t = Math.min(t, (0  - p[1]) / d[1]);
+  if (d[2] > 1e-9) t = Math.min(t, (Z1 - p[2]) / d[2]); else if (d[2] < -1e-9) t = Math.min(t, (Z0 - p[2]) / d[2]);
+  return Math.max(0, t);
+}
+function enterPrism(p, d, planes){
+  let tN = -1e9, tF = 1e9, face = -1;
+  for (let i = 0; i < planes.length; i++){
+    const P = planes[i], nd = dot(P.n, d), dist = P.d - dot(P.n, p);
+    if (Math.abs(nd) < 1e-12){ if (dist < 0) return null; continue; }
+    const t = dist / nd;
+    if (nd < 0){ if (t > tN){ tN = t; face = i; } }
+    else if (t < tF) tF = t;
+  }
+  if (tN > tF || tN < 1e-7) return null;
+  return { t: tN, face };
+}
+
+// 광선 하나를 방 안에서 추적: 공기 중 구간, 투과율, 경로 서명, 입사면 반사광
+function trace(o, d, nG, prisms){
+  let p = o, dir = d, T = 1, sig = '', refl = null, refr = 0;
+  const segs = [], gsegs = [];
+  for (let pass = 0; pass < 4; pass++){
+    let best = null, bk = -1;
+    for (let k = 0; k < prisms.length; k++){
+      const h = enterPrism(p, dir, prisms[k].planes);
+      if (h && (!best || h.t < best.t)){ best = h; bk = k; }
+    }
+    if (!best) break;
+    const planes = prisms[bk].planes;
+    const hit = madd(p, dir, best.t);
+    segs.push([p, hit]);
+    // 들어갈 때 굴절
+    const N = planes[best.face].n;
+    const cosi = -dot(dir, N), eta = 1 / nG;
+    const k2 = 1 - eta*eta*(1 - cosi*cosi), cost = Math.sqrt(k2);
+    const R = fresnel(cosi, cost, 1, nG);
+    if (pass === 0) refl = { p: hit, d: madd(dir, N, 2*cosi), R, face: best.face };
+    T *= 1 - R;
+    dir = nrm(madd(dir.map(x => x*eta), N, eta*cosi - cost));
+    sig += bk + '' + best.face;
+    p = hit;
+    const gStart = hit;
+    // 유리 안에서 나갈 면 찾기 (전반사 포함)
+    let out = false;
+    for (let b = 0; b < 9; b++){
+      let tm = 1e9, f = -1;
+      for (let i = 0; i < planes.length; i++){
+        const nd = dot(planes[i].n, dir);
+        if (nd > 1e-9){ const t = (planes[i].d - dot(planes[i].n, p)) / nd; if (t < tm){ tm = t; f = i; } }
+      }
+      if (f < 0) return null;
+      const n = planes[f].n;
+      p = madd(p, dir, tm);
+      const ci = dot(dir, n), k3 = 1 - nG*nG*(1 - ci*ci);
+      sig += f;
+      if (k3 < 0){ dir = madd(dir, n, -2*ci); sig += 'r'; continue; }   // 전반사
+      const ct = Math.sqrt(k3);
+      T *= 1 - fresnel(ci, ct, nG, 1);
+      dir = nrm(madd(dir.map(x => x*nG), n, -(nG*ci - ct)));
+      out = true; refr++; break;
+    }
+    if (!out) return null;
+    gsegs.push([gStart, p]);
+    sig += '|';
+  }
+  const t = roomExit(p, dir);
+  segs.push([p, madd(p, dir, t)]);
+  return { segs, gsegs, T, sig, fo: p, fd: dir, refl, refr };
+}
+
+/* =========================================================
+   2. 장면
+   ========================================================= */
+const canvas = document.getElementById('c');
+let renderer;
+try {
+  renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: 'high-performance' });
+} catch (e) {
+  const el = document.getElementById('err'); el.style.display = 'flex';
+  el.textContent = '이 브라우저에서는 3D 그래픽(WebGL)을 쓸 수 없어요. 크롬이나 사파리로 열어 주세요.';
+  throw e;
+}
+const DPR = Math.min(window.devicePixelRatio || 1, 1.75);
+renderer.setPixelRatio(DPR);
+renderer.toneMapping = THREE.NeutralToneMapping;
+renderer.toneMappingExposure = 1.0;
+renderer.outputColorSpace = THREE.SRGBColorSpace;
+
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x060504);
+const camera = new THREE.PerspectiveCamera(45, 1, 0.05, 40);
+
+const pmrem = new THREE.PMREMGenerator(renderer);
+const envTex = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
+
+// ---------- 텍스처 ----------
+function rng(seed){ let s = seed >>> 0; return () => ((s = (s * 1664525 + 1013904223) >>> 0) / 4294967296); }
+function woodTexture(){
+  const W = 2048, Hh = 1840, cv = document.createElement('canvas'); cv.width = W; cv.height = Hh;
+  const g = cv.getContext('2d'), r = rng(7);
+  const planks = Math.round((X1 - X0) / 0.17);
+  const pw = W / planks;
+  for (let i = 0; i < planks; i++){
+    let y = -r() * 600;
+    while (y < Hh){
+      const L = 500 + r() * 900;
+      const base = 168 + r()*30, hue = r();
+      const R = base + 40, G = base + 12 - hue*8, B = base - 30 - hue*12;
+      g.fillStyle = `rgb(${R|0},${G|0},${B|0})`;
+      g.fillRect(i*pw, y, pw, L);
+      // 결
+      for (let k = 0; k < 16; k++){
+        const x = i*pw + r()*pw, a = 0.04 + r()*0.08;
+        g.strokeStyle = `rgba(${(R-60)|0},${(G-60)|0},${(B-55)|0},${a})`;
+        g.lineWidth = 0.6 + r()*1.8;
+        g.beginPath(); g.moveTo(x, y);
+        let xx = x;
+        for (let yy = y; yy < y + L; yy += 40){ xx += (r()-0.5)*3; g.lineTo(xx, yy); }
+        g.stroke();
+      }
+      g.fillStyle = 'rgba(60,40,25,.45)'; g.fillRect(i*pw, y, pw, 2);
+      y += L;
+    }
+    g.fillStyle = 'rgba(50,34,22,.55)'; g.fillRect(i*pw, 0, 2, Hh);
+  }
+  const t = new THREE.CanvasTexture(cv);
+  t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 8;
+  return t;
+}
+function plasterTexture(seed){
+  const W = 512, cv = document.createElement('canvas'); cv.width = cv.height = W;
+  const g = cv.getContext('2d'), r = rng(seed);
+  g.fillStyle = '#efe5d3'; g.fillRect(0, 0, W, W);
+  for (let i = 0; i < 2600; i++){
+    const x = r()*W, y = r()*W, s = 2 + r()*10, a = r()*0.03;
+    g.fillStyle = r() < 0.5 ? `rgba(255,255,250,${a})` : `rgba(120,100,80,${a*0.7})`;
+    g.beginPath(); g.arc(x, y, s, 0, 7); g.fill();
+  }
+  const t = new THREE.CanvasTexture(cv);
+  t.colorSpace = THREE.SRGBColorSpace; t.wrapS = t.wrapT = THREE.RepeatWrapping;
+  return t;
+}
+
+// ---------- 빛을 받는 면 (라이트맵) ----------
+const lmCam = new THREE.OrthographicCamera(0, 1, 1, 0, -1, 1);
+const MAXQ = (NU-1) * (NV-1) * (NL + 2);
+const surfaces = [];
+function makeSurface(o, U, V, n, res, mat, repeatTex){
+  const g = new THREE.BufferGeometry();
+  const P = [o, madd(o,U,1), madd(madd(o,U,1),V,1), madd(o,V,1)];
+  g.setAttribute('position', new THREE.Float32BufferAttribute(P.flat(), 3));
+  g.setAttribute('uv', new THREE.Float32BufferAttribute([0,0, 1,0, 1,1, 0,1], 2));
+  g.setIndex(dot(cross(U,V), n) > 0 ? [0,1,2, 0,2,3] : [0,2,1, 0,3,2]);
+  g.computeVertexNormals();
+  if (repeatTex){ // 벽지 반복은 uv 대신 텍스처 행렬로
+    mat.map.repeat.set(len(U)/1.6, len(V)/1.6);
+  }
+  const rt = new THREE.WebGLRenderTarget(res[0], res[1], {
+    type: THREE.HalfFloatType, minFilter: THREE.LinearFilter, magFilter: THREE.LinearFilter, depthBuffer: false, generateMipmaps: false
+  });
+  mat.lightMap = rt.texture;
+  mat.lightMapIntensity = Math.PI;
+  const mesh = new THREE.Mesh(g, mat);
+  scene.add(mesh);
+  const lg = new THREE.BufferGeometry();
+  const pos = new Float32Array(MAXQ * 6 * 3), col = new Float32Array(MAXQ * 6 * 3);
+  lg.setAttribute('position', new THREE.BufferAttribute(pos, 3).setUsage(THREE.DynamicDrawUsage));
+  lg.setAttribute('color', new THREE.BufferAttribute(col, 3).setUsage(THREE.DynamicDrawUsage));
+  const lmesh = new THREE.Mesh(lg, new THREE.MeshBasicMaterial({
+    vertexColors: true, blending: THREE.AdditiveBlending, transparent: true, depthTest: false, depthWrite: false, side: THREE.DoubleSide
+  }));
+  lmesh.frustumCulled = false;
+  const ls = new THREE.Scene(); ls.add(lmesh);
+  const s = { o, U, V, n, UU: dot(U,U), VV: dot(V,V), area: len(U)*len(V), rt, lg, pos, col, ls, cnt: 0, mesh };
+  surfaces.push(s);
+  return s;
+}
+const woodTex = woodTexture();
+const floorMat = new THREE.MeshStandardMaterial({ map: woodTex, roughness: 0.62, metalness: 0 });
+makeSurface([X0,0,Z0], [X1-X0,0,0], [0,0,Z1-Z0], [0,1,0], [2048, 1840], floorMat);
+makeSurface([X0,0,Z0], [X1-X0,0,0], [0,H,0], [0,0,1], [2048, 1000], new THREE.MeshStandardMaterial({ map: plasterTexture(3), roughness: 0.95 }), true);
+makeSurface([X0,0,Z0], [0,0,Z1-Z0], [0,H,0], [1,0,0], [1840, 1000], new THREE.MeshStandardMaterial({ map: plasterTexture(5), roughness: 0.95 }), true);
+makeSurface([X1,0,Z0], [0,0,Z1-Z0], [0,H,0], [-1,0,0], [1840, 1000], new THREE.MeshStandardMaterial({ map: plasterTexture(9), roughness: 0.95 }), true);
+
+// 천장
+{
+  const cm = new THREE.Mesh(new THREE.PlaneGeometry(X1-X0, Z1-Z0), new THREE.MeshStandardMaterial({ color: 0xd8cfc0, roughness: 1 }));
+  cm.rotation.x = Math.PI/2; cm.position.set((X0+X1)/2, H, (Z0+Z1)/2); scene.add(cm);
+}
+// 걸레받이
+const trimMat = new THREE.MeshStandardMaterial({ color: 0xece4d6, roughness: 0.6 });
+function box(w,h,d, x,y,z, mat){ const m = new THREE.Mesh(new THREE.BoxGeometry(w,h,d), mat); m.position.set(x,y,z); scene.add(m); return m; }
+box(X1-X0, 0.09, 0.016, 0, 0.045, Z0+0.008, trimMat);
+box(0.016, 0.09, Z1-Z0, X0+0.008, 0.045, (Z0+Z1)/2, trimMat);
+box(0.016, 0.09, Z1-Z0, X1-0.008, 0.045, (Z0+Z1)/2, trimMat);
+
+// ---------- 창과 덧창 ----------
+const WIN = { z0: HOLE[2] - 0.7, z1: HOLE[2] + 0.7, y0: 0.82, y1: 2.45 };
+const skyMat = new THREE.MeshBasicMaterial({ color: 0xffffff, toneMapped: true });
+const sky = new THREE.Mesh(new THREE.PlaneGeometry(WIN.z1 - WIN.z0, WIN.y1 - WIN.y0), skyMat);
+sky.rotation.y = Math.PI / 2; sky.position.set(X0 + 0.012, (WIN.y0+WIN.y1)/2, (WIN.z0+WIN.z1)/2);
+scene.add(sky);
+const shutterMat = new THREE.MeshStandardMaterial({ color: 0x4a3426, roughness: 0.7, metalness: 0 });
+const frameMat = new THREE.MeshStandardMaterial({ color: 0xe9e1d3, roughness: 0.55 });
+const SX = SHUT_X - 0.02;       // 덧창 판 중심 x
+const SLIT_W = 0.03, SLIT_H = 0.31;
+const shutter = new THREE.Group(); scene.add(shutter);
+function sbox(w,h,d,x,y,z){ const m = new THREE.Mesh(new THREE.BoxGeometry(w,h,d), shutterMat); m.position.set(x,y,z); shutter.add(m); }
+function buildShutter(hy){
+  shutter.children.forEach(c => c.geometry.dispose()); shutter.clear();
+  const zs0 = HOLE[2] - SLIT_W/2, zs1 = HOLE[2] + SLIT_W/2, ys0 = hy - SLIT_H/2, ys1 = hy + SLIT_H/2;
+  sbox(0.03, WIN.y1-WIN.y0, zs0-WIN.z0, SX, (WIN.y0+WIN.y1)/2, (WIN.z0+zs0)/2);
+  sbox(0.03, WIN.y1-WIN.y0, WIN.z1-zs1, SX, (WIN.y0+WIN.y1)/2, (zs1+WIN.z1)/2);
+  sbox(0.03, ys0-WIN.y0, SLIT_W, SX, (WIN.y0+ys0)/2, HOLE[2]);
+  sbox(0.03, WIN.y1-ys1, SLIT_W, SX, (ys1+WIN.y1)/2, HOLE[2]);
+  for (const [za, zb] of [[WIN.z0, zs0], [zs1, WIN.z1]]){
+    for (const f of [0.06, 0.5, 0.94]){
+      const yy = WIN.y0 + (WIN.y1-WIN.y0) * f;
+      if (Math.abs(yy - hy) < SLIT_H/2 + 0.04 && Math.abs((za+zb)/2 - HOLE[2]) < 0.3) continue;
+      sbox(0.012, 0.06, zb-za-0.04, SX+0.02, yy, (za+zb)/2);
+    }
+    sbox(0.012, WIN.y1-WIN.y0-0.04, 0.05, SX+0.02, (WIN.y0+WIN.y1)/2, za + 0.045);
+    sbox(0.012, WIN.y1-WIN.y0-0.04, 0.05, SX+0.02, (WIN.y0+WIN.y1)/2, zb - 0.045);
+  }
+}
+// 창틀
+const FT = 0.07;
+box(0.13, FT, WIN.z1-WIN.z0+2*FT, X0+0.065, WIN.y1+FT/2, (WIN.z0+WIN.z1)/2, frameMat);
+box(0.16, 0.05, WIN.z1-WIN.z0+2*FT+0.08, X0+0.08, WIN.y0-0.025, (WIN.z0+WIN.z1)/2, frameMat);
+box(0.13, WIN.y1-WIN.y0, FT, X0+0.065, (WIN.y0+WIN.y1)/2, WIN.z0-FT/2, frameMat);
+box(0.13, WIN.y1-WIN.y0, FT, X0+0.065, (WIN.y0+WIN.y1)/2, WIN.z1+FT/2, frameMat);
+// 덧창 가장자리로 새는 빛
+const leakMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
+box(0.004, 0.006, WIN.z1-WIN.z0-0.02, SX+0.016, WIN.y1-0.004, (WIN.z0+WIN.z1)/2, leakMat);
+box(0.004, 0.004, WIN.z1-WIN.z0-0.02, SX+0.016, WIN.y0+0.003, (WIN.z0+WIN.z1)/2, leakMat);
+
+// ---------- 조명 ----------
+const hemi = new THREE.HemisphereLight(0xfff0dc, 0x2b1d12, 0.5);
+scene.add(hemi);
+const fill = new THREE.PointLight(0xffe2bf, 0.0, 6, 1.6);
+fill.position.set(X0 + 0.4, 1.7, HOLE[2]);
+scene.add(fill);
+const spot = new THREE.SpotLight(0xffffff, 60, 2.0, 0.05, 0.6, 0);
+scene.add(spot); scene.add(spot.target);
+
+// ---------- 프리즘과 받침 ----------
+function prismGeometry(){
+  const R = PS / Math.sqrt(3) - 0.0025;
+  const sh = new THREE.Shape();
+  for (let k = 0; k < 3; k++){
+    const a = Math.PI/2 + k * 2*Math.PI/3;
+    k ? sh.lineTo(R*Math.cos(a), R*Math.sin(a)) : sh.moveTo(R*Math.cos(a), R*Math.sin(a));
+  }
+  sh.closePath();
+  const g = new THREE.ExtrudeGeometry(sh, { depth: PL - 0.005, bevelEnabled: true, bevelThickness: 0.0025, bevelSize: 0.0025, bevelSegments: 2, curveSegments: 1 });
+  g.translate(0, 0, -(PL - 0.005)/2);
+  return g;
+}
+const prismMat = new THREE.MeshPhysicalMaterial({
+  color: 0xffffff, metalness: 0, roughness: 0.02, transmission: 1, thickness: 0.11, ior: 1.78,
+  dispersion: 3.5, envMap: envTex, envMapIntensity: 1.4, specularIntensity: 1, clearcoat: 0.4, clearcoatRoughness: 0.02,
+  attenuationColor: new THREE.Color(0xf6fbff), attenuationDistance: 2.5
+});
+const brass = new THREE.MeshStandardMaterial({ color: 0xc29a5c, metalness: 1, roughness: 0.32, envMap: envTex, envMapIntensity: 1.0 });
+const baseMat = new THREE.MeshStandardMaterial({ color: 0x2a2018, metalness: 0.3, roughness: 0.45, envMap: envTex, envMapIntensity: 0.6 });
+const pGeo = prismGeometry();
+function makeHolder(){
+  const grp = new THREE.Group();
+  const prism = new THREE.Mesh(pGeo, prismMat);
+  const plate = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 0.007, 40), brass);
+  const pin = new THREE.Mesh(new THREE.CylinderGeometry(0.007, 0.009, 0.03, 20), brass);
+  const knob = new THREE.Mesh(new THREE.SphereGeometry(0.012, 20, 14), brass);
+  const rod = new THREE.Mesh(new THREE.CylinderGeometry(0.0065, 0.0065, 1, 16), brass);
+  const base = new THREE.Mesh(new THREE.CylinderGeometry(0.085, 0.1, 0.026, 48), baseMat);
+  const ring = new THREE.Mesh(new THREE.TorusGeometry(0.086, 0.004, 8, 48), brass);
+  ring.rotation.x = Math.PI/2;
+  grp.add(prism, plate, pin, knob, rod, base, ring);
+  scene.add(grp);
+  return { grp, prism, plate, pin, knob, rod, base, ring };
+}
+const holders = [makeHolder(), makeHolder()];
+holders[1].grp.visible = false;
+const _q = new THREE.Quaternion(), _q2 = new THREE.Quaternion();
+const QX90 = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1,0,0), Math.PI/2);
+function placeHolder(h, C, q){
+  h.prism.position.set(...C); h.prism.quaternion.copy(q);
+  const ax = new THREE.Vector3(0,0,1).applyQuaternion(q);
+  const cq = q.clone().multiply(QX90);
+  const at = (s) => new THREE.Vector3(...C).addScaledVector(ax, -s);
+  h.plate.position.copy(at(PL/2 + 0.0035)); h.plate.quaternion.copy(cq);
+  h.pin.position.copy(at(PL/2 + 0.022));    h.pin.quaternion.copy(cq);
+  const e = at(PL/2 + 0.04);
+  h.knob.position.copy(e);
+  const top = Math.max(0.05, e.y);
+  h.rod.scale.y = top; h.rod.position.set(e.x, top/2, e.z);
+  h.base.position.set(e.x, 0.013, e.z);
+  h.ring.position.set(e.x, 0.024, e.z);
+}
+
+// ---------- 공기 중 빛줄기 ----------
+const MAXSHEET = 600;
+const ribGeo = new THREE.BufferGeometry();
+const ribPos = new Float32Array(MAXSHEET*6*3), ribCol = new Float32Array(MAXSHEET*6*3), ribAcr = new Float32Array(MAXSHEET*6);
+ribGeo.setAttribute('position', new THREE.BufferAttribute(ribPos, 3).setUsage(THREE.DynamicDrawUsage));
+ribGeo.setAttribute('color', new THREE.BufferAttribute(ribCol, 3).setUsage(THREE.DynamicDrawUsage));
+ribGeo.setAttribute('across', new THREE.BufferAttribute(ribAcr, 1).setUsage(THREE.DynamicDrawUsage));
+const ribMat = new THREE.ShaderMaterial({
+  vertexShader: `attribute float across; attribute vec3 color; varying float vA; varying vec3 vC;
+    void main(){ vA = across; vC = color; gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0); }`,
+  fragmentShader: `varying float vA; varying vec3 vC;
+    void main(){ float f = sin(3.14159265 * clamp(vA,0.0,1.0)); f *= f; gl_FragColor = vec4(vC * f, 1.0); }`,
+  blending: THREE.AdditiveBlending, transparent: true, depthWrite: false, side: THREE.DoubleSide, toneMapped: false
+});
+const ribbons = new THREE.Mesh(ribGeo, ribMat);
+ribbons.frustumCulled = false;
+scene.add(ribbons);
+
+// 먼지
+const NDUST = 900;
+const dPos = new Float32Array(NDUST*3), dCol = new Float32Array(NDUST*3), dLife = new Float32Array(NDUST), dVel = new Float32Array(NDUST*3);
+const dustGeo = new THREE.BufferGeometry();
+dustGeo.setAttribute('position', new THREE.BufferAttribute(dPos, 3).setUsage(THREE.DynamicDrawUsage));
+dustGeo.setAttribute('color', new THREE.BufferAttribute(dCol, 3).setUsage(THREE.DynamicDrawUsage));
+const sprite = (() => {
+  const cv = document.createElement('canvas'); cv.width = cv.height = 64;
+  const g = cv.getContext('2d'), gr = g.createRadialGradient(32,32,0,32,32,32);
+  gr.addColorStop(0, 'rgba(255,255,255,1)'); gr.addColorStop(0.35, 'rgba(255,255,255,.45)'); gr.addColorStop(1, 'rgba(255,255,255,0)');
+  g.fillStyle = gr; g.fillRect(0,0,64,64);
+  return new THREE.CanvasTexture(cv);
+})();
+const dust = new THREE.Points(dustGeo, new THREE.PointsMaterial({
+  size: 0.011, map: sprite, vertexColors: true, blending: THREE.AdditiveBlending, transparent: true, depthWrite: false, sizeAttenuation: true, toneMapped: false
+}));
+dust.frustumCulled = false;
+scene.add(dust);
+
+/* =========================================================
+   3. 상태와 계산
+   ========================================================= */
+const state = { time: 'noon', glass: 'flint', newton: false, beams: true, tilt: false };
+let yaw = 0, tilt = 0, yawT = 0, tiltT = 0, dragYaw = 0, dragTilt = 0, gyroYaw = 0, gyroTilt = 0, vYaw = 0;
+let dirty = true, lastYaw = 1e9, lastTilt = 1e9;
+let C1, d0, eu, ev, nG = [], q1 = new THREE.Quaternion(), devMin = null;
+const Q0 = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1,0,0), -Math.PI/2); // 로컬 z → 위쪽
+
+function orient(yawA, tiltA, out){
+  const qy = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0,1,0), yawA);
+  const qt = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(eu[0],eu[1],eu[2]), tiltA);
+  return out.copy(qt).multiply(qy).multiply(Q0);
+}
+function setupSun(){
+  const S = SUNS[state.time];
+  d0 = sunDir(S.e);
+  eu = nrm(cross(d0, [0,1,0]));
+  ev = cross(eu, d0); if (ev[1] < 0) ev = ev.map(x => -x);
+  C1 = prismCenter();
+  HOLE[1] = holeY(S.e);
+  buildShutter(HOLE[1]);
+  const g = GLASS[state.glass];
+  nG = LAMBDA.map(l => sellmeier(g, l));
+  const n550 = sellmeier(g, 550);
+  prismMat.ior = Math.min(2.33, n550);
+  prismMat.dispersion = g.disp;
+  skyMat.color.setRGB(S.sky[0]*14, S.sky[1]*14, S.sky[2]*14);
+  leakMat.color.setRGB(S.sky[0]*2.2, S.sky[1]*2.0, S.sky[2]*1.8);
+  hemi.intensity = S.amb;
+  hemi.color.setRGB(0.9 + 0.1*S.col[0], 0.82 + 0.15*S.col[1], 0.7 + 0.25*S.col[2]);
+  fill.color.setRGB(...S.col); fill.intensity = 0.35;
+  spot.color.setRGB(...S.col);
+  spot.position.set(...madd(C1, d0, -1.2));
+  spot.target.position.set(...C1);
+  spot.distance = 1.32; spot.angle = Math.atan(0.13 / 1.2);
+  // 최소 편각 찾기 (기울기 0) — 빛이 들어가는 면마다 면 한가운데로 겨눠 봄
+  devMin = null; let bestYaw = 0, bestFace = 0;
+  const qq = new THREE.Quaternion();
+  const faceRay = (a, f, du) => {
+    orient(a, 0, qq);
+    const pl = prismPlanes(C1, qq), n = pl[f].n;
+    if (dot(n, d0) > -0.05) return null;
+    const Fc = madd(madd(C1, n, INR), eu, du);
+    const r = trace(madd(Fc, d0, -1), d0, n550, [{ planes: pl }]);
+    if (!r || r.sig.length !== 4 || r.sig.includes('r') || +r.sig[1] !== f) return null;
+    if (r.fd[2] > d0[2]) return null;    // 안쪽 벽(-z) 쪽으로 꺾이는 경우만
+    return r;
+  };
+  for (let a = -Math.PI; a < Math.PI; a += Math.PI/360){
+    for (let f = 0; f < 3; f++){
+      const r = faceRay(a, f, 0);
+      if (!r) continue;
+      const dv = Math.acos(Math.min(1, dot(d0, r.fd)));
+      if (devMin === null || dv < devMin){ devMin = dv; bestYaw = a; bestFace = f; }
+    }
+  }
+  // 처음 자리: 최소 편각에서 살짝 비켜 서고, 빛다발 전체가 한 면으로 들어가는 쪽
+  homeOff = 0;
+  for (const off of [0.1, -0.1, 0.07, -0.07, 0.04, -0.04]){
+    if (faceRay(bestYaw + off, bestFace, 0) && faceRay(bestYaw + off, bestFace, BEAM_W*0.6) && faceRay(bestYaw + off, bestFace, -BEAM_W*0.6)){ homeOff = off; break; }
+  }
+  // 그 면의 한가운데가 빛다발 중심에 오도록 받침을 옮겨 둠
+  orient(bestYaw + homeOff, 0, qq);
+  {
+    const n = prismPlanes(C1, qq)[bestFace].n;
+    const Fc = madd(C1, n, INR);
+    C1 = madd(C1, eu, -dot(sub(Fc, PC), eu));
+  }
+  return bestYaw;
+}
+
+const rays = [];            // [λ][iu*NV+iv]
+let reflRays = [];
+const surfUV = (r, s) => {  // 광선의 마지막 구간이 면에 닿는 uv
+  const den = dot(r.fd, s.n);
+  if (den > -1e-6) return null;
+  const t = dot(sub(s.o, r.fo), s.n) / den;
+  if (t <= 0) return null;
+  const p = madd(r.fo, r.fd, t), q = sub(p, s.o);
+  return [dot(q, s.U)/s.UU, dot(q, s.V)/s.VV];
+};
+let beams = [];             // 먼지용 빛다발
+let devNow = null;
+let interest = { min:[X0,0,Z0], max:[X1,H,Z1] };
+
+function compute(){
+  const S = SUNS[state.time];
+  orient(yaw, tilt, q1);
+  const prisms = [{ planes: prismPlanes(C1, q1) }];
+  placeHolder(holders[0], C1, q1);
+
+  // 중심 광선 (편각 표시 · 뉴턴 프리즘 자리)
+  const n550 = sellmeier(GLASS[state.glass], 550);
+  const rc = trace(madd(PC, d0, -1), d0, n550, prisms);
+  devNow = (rc && rc.sig.length === 4 && !rc.sig.includes('r')) ? Math.acos(Math.min(1, dot(d0, rc.fd))) : null;
+  holders[1].grp.visible = false;
+  if (state.newton && rc && rc.refr === 1){
+    const C2 = madd(rc.fo, rc.fd, 0.26);
+    const q2 = q1.clone().multiply(_q2.setFromAxisAngle(new THREE.Vector3(0,0,1), Math.PI));
+    prisms.push({ planes: prismPlanes(C2, q2) });
+    placeHolder(holders[1], C2, q2);
+    holders[1].grp.visible = true;
+  }
+
+  // 광선 다발 출발점 (덧창 틈)
+  const origins = [];
+  for (let iu = 0; iu < NU; iu++) for (let iv = 0; iv < NV; iv++){
+    const u = (iu/(NU-1) - 0.5) * BEAM_W, v = (iv/(NV-1) - 0.5) * BEAM_H;
+    const Q = madd(madd(PC, eu, u), ev, v);
+    origins.push(madd(Q, d0, -(Q[0] - SHUT_X) / d0[0]));
+  }
+  // 파장마다 추적 (태양 원반 크기만큼 방향을 조금씩 흩뜨림)
+  for (let i = 0; i < NL; i++){
+    const a = ((i * 29) % NL) / NL - 0.5, b = ((i * 17 + 7) % NL) / NL - 0.5;
+    const di = nrm(madd(madd(d0, eu, a*SUN_DISK), ev, b*SUN_DISK));
+    const arr = rays[i] || (rays[i] = []);
+    for (let k = 0; k < origins.length; k++) arr[k] = trace(origins[k], di, nG[i], prisms);
+  }
+  // 입사면에서 반사된 흰빛
+  reflRays = rays[NL >> 1].map(r => (r && r.refl) ? { fo: r.refl.p, fd: r.refl.d, T: r.refl.R, sig: 'R' + r.refl.face } : null);
+
+  buildLightmaps(S);
+  buildRibbons(S);
+}
+
+function buildLightmaps(S){
+  const cellA = (BEAM_W/(NU-1)) * (BEAM_H/(NV-1));
+  for (const s of surfaces) s.cnt = 0;
+  const E = S.E;
+  const sets = [];
+  for (let i = 0; i < NL; i++) sets.push([rays[i], SPEC[i]]);
+  sets.push([reflRays, [1,1,1]]);
+  for (const [arr, c] of sets){
+    const cache = new Map();
+    for (let iu = 0; iu < NU-1; iu++) for (let iv = 0; iv < NV-1; iv++){
+      const ks = [iu*NV+iv, (iu+1)*NV+iv, (iu+1)*NV+iv+1, iu*NV+iv+1];
+      const rr = ks.map(k => arr[k]);
+      if (rr.some(r => !r)) continue;
+      const sg = rr[0].sig;
+      if (rr[1].sig !== sg || rr[2].sig !== sg || rr[3].sig !== sg) continue;
+      const T = 0.25 * (rr[0].T + rr[1].T + rr[2].T + rr[3].T);
+      if (T < 1e-4) continue;
+      for (let si = 0; si < surfaces.length; si++){
+        const s = surfaces[si];
+        const uv = [];
+        for (let j = 0; j < 4; j++){
+          const key = ks[j]*8 + si;
+          let v = cache.get(key);
+          if (v === undefined){ v = surfUV(rr[j], s); cache.set(key, v); }
+          if (!v) break;
+          uv.push(v);
+        }
+        if (uv.length < 4) continue;
+        // 바깥이면 건너뜀
+        let minU = 9, maxU = -9, minV = 9, maxV = -9;
+        for (const p of uv){ minU = Math.min(minU,p[0]); maxU = Math.max(maxU,p[0]); minV = Math.min(minV,p[1]); maxV = Math.max(maxV,p[1]); }
+        if (maxU < 0 || minU > 1 || maxV < 0 || minV > 1) continue;
+        let ar = 0;
+        for (let j = 0; j < 4; j++){ const p = uv[j], q = uv[(j+1)%4]; ar += p[0]*q[1] - q[0]*p[1]; }
+        ar = Math.abs(ar) * 0.5 * s.area;
+        const f = Math.min(70, cellA * T / Math.max(ar, 1e-9)) * E;
+        const cr = c[0]*S.col[0]*f, cg = c[1]*S.col[1]*f, cb = c[2]*S.col[2]*f;
+        if (s.cnt >= MAXQ) continue;
+        const o = s.cnt * 18;
+        const tri = [uv[0], uv[1], uv[2], uv[0], uv[2], uv[3]];
+        for (let j = 0; j < 6; j++){
+          s.pos[o+j*3] = tri[j][0]; s.pos[o+j*3+1] = tri[j][1]; s.pos[o+j*3+2] = 0;
+          s.col[o+j*3] = cr; s.col[o+j*3+1] = cg; s.col[o+j*3+2] = cb;
+        }
+        s.cnt++;
+      }
+    }
+  }
+  for (const s of surfaces){
+    s.lg.attributes.position.needsUpdate = true;
+    s.lg.attributes.color.needsUpdate = true;
+    s.lg.setDrawRange(0, s.cnt * 6);
+  }
+}
+
+let ribCount = 0;
+function pushSheet(A0, A1, B0, B1, cA, cB){  // A: 가장자리 0 (시작·끝), B: 가장자리 1
+  if (ribCount >= MAXSHEET) return;
+  const o = ribCount * 6;
+  const P = [A0, B0, B1, A0, B1, A1], AC = [0,1,1,0,1,0], CC = [cA, cA, cB, cA, cB, cB];
+  for (let j = 0; j < 6; j++){
+    ribPos.set(P[j], (o+j)*3); ribCol.set(CC[j], (o+j)*3); ribAcr[o+j] = AC[j];
+  }
+  ribCount++;
+}
+function buildRibbons(S){
+  ribCount = 0; beams = [];
+  const lo = [9,9,9], hi = [-9,-9,-9];
+  const grow = p => { for (let a = 0; a < 3; a++){ lo[a] = Math.min(lo[a], p[a]); hi[a] = Math.max(hi[a], p[a]); } };
+  const STEP = 2, AIR = 0.05;
+  for (let i = 0; i < NL; i++){
+    const arr = rays[i];
+    const center = i === (NL >> 1);
+    if (!center && i % STEP) continue;
+    // 가로 방향으로 같은 길을 가는 광선끼리 묶음 (빛이 모서리에 걸치면 갈라짐)
+    let iu = 0;
+    while (iu < NU){
+      const r0 = arr[iu*NV + IV_MID];
+      if (!r0){ iu++; continue; }
+      let j = iu;
+      while (j + 1 < NU && arr[(j+1)*NV + IV_MID] && arr[(j+1)*NV + IV_MID].sig === r0.sig) j++;
+      if (j > iu){
+        const ua = r0, ub = arr[j*NV + IV_MID], m = (iu + j) >> 1;
+        const va = arr[m*NV], vb = arr[m*NV + NV - 1];
+        const vOK = va && vb && va.sig === r0.sig && vb.sig === r0.sig;
+        const w0 = BEAM_W * (j - iu) / (NU - 1);
+        for (let k = 0; k < ua.segs.length; k++){
+          const incoming = k === 0;
+          if (incoming !== center && incoming) continue;
+          if (!incoming && i % STEP) continue;
+          const [A0, A1] = ua.segs[k], [B0, B1] = ub.segs[k];
+          const ws = len(sub(B0, A0)), we = len(sub(B1, A1));
+          let cA, cB, hue;
+          if (incoming){
+            const g = S.E * AIR * 0.8 * (j - iu) / (NU - 1);
+            cA = cB = [S.col[0]*g, S.col[1]*g, S.col[2]*g];
+            hue = S.col;
+          } else {
+            const c = SPEC[i], g = S.E * AIR * STEP;
+            const fa = Math.min(4, w0 / Math.max(ws, 1e-4)) * g, fb = Math.min(4, w0 / Math.max(we, 1e-4)) * g;
+            cA = [c[0]*S.col[0]*fa, c[1]*S.col[1]*fa, c[2]*S.col[2]*fa];
+            cB = [c[0]*S.col[0]*fb, c[1]*S.col[1]*fb, c[2]*S.col[2]*fb];
+            hue = [HUE[i][0]*S.col[0], HUE[i][1]*S.col[1], HUE[i][2]*S.col[2]];
+          }
+          pushSheet(A0, A1, B0, B1, cA, cB);
+          if (center && ua.gsegs[k] && ub.gsegs[k]){   // 유리 속을 지나는 빛 (살짝 비침)
+            const gl = S.E * 0.05 * (j - iu) / (NU - 1), gc = [S.col[0]*gl, S.col[1]*gl, S.col[2]*gl];
+            pushSheet(ua.gsegs[k][0], ua.gsegs[k][1], ub.gsegs[k][0], ub.gsegs[k][1], gc, gc);
+            if (vOK && va.gsegs[k] && vb.gsegs[k]) pushSheet(va.gsegs[k][0], va.gsegs[k][1], vb.gsegs[k][0], vb.gsegs[k][1], gc, gc);
+          }
+          if (vOK && va.segs[k] && vb.segs[k]){
+            pushSheet(va.segs[k][0], va.segs[k][1], vb.segs[k][0], vb.segs[k][1], cA, cB);
+            if (incoming || i % 4 === 0){
+              const V0 = sub(vb.segs[k][0], va.segs[k][0]), V1 = sub(vb.segs[k][1], va.segs[k][1]);
+              const Sx = [(A0[0]+B0[0])/2, (A0[1]+B0[1])/2, (A0[2]+B0[2])/2];
+              const Ex = [(A1[0]+B1[0])/2, (A1[1]+B1[1])/2, (A1[2]+B1[2])/2];
+              const D = sub(Ex, Sx), DD = dot(D, D);
+              if (DD > 1e-6){
+                beams.push({ S: Sx, D, DD, U0: sub(B0, A0), U1: sub(B1, A1), V0, V1, ws, hue, w: incoming ? 1.1 : 0.55 });
+                const L = Math.sqrt(DD), cut = Math.min(1, 2.6 / L);
+                grow(Sx); grow(madd(Sx, D, cut));
+              }
+            }
+          }
+        }
+      }
+      iu = j + 1;
+    }
+  }
+  for (let a = 0; a < 3; a++){ lo[a] -= 0.18; hi[a] += 0.18; }
+  lo[0] = Math.max(lo[0], SHUT_X); lo[1] = Math.max(lo[1], 0); hi[1] = Math.min(hi[1], H);
+  if (lo[0] < hi[0]) interest = { min: lo, max: hi };
+  ribGeo.attributes.position.needsUpdate = true;
+  ribGeo.attributes.color.needsUpdate = true;
+  ribGeo.attributes.across.needsUpdate = true;
+  ribGeo.setDrawRange(0, ribCount * 6);
+}
+
+// 먼지 움직임과 빛
+const drng = rng(42);
+function respawn(i){
+  const { min, max } = interest;
+  dPos[i*3]   = min[0] + drng()*(max[0]-min[0]);
+  dPos[i*3+1] = min[1] + drng()*(max[1]-min[1]);
+  dPos[i*3+2] = min[2] + drng()*(max[2]-min[2]);
+  dLife[i] = 4 + drng()*10;
+  dVel[i*3] = (drng()-0.5)*0.01; dVel[i*3+1] = (drng()-0.4)*0.008; dVel[i*3+2] = (drng()-0.5)*0.01;
+}
+for (let i = 0; i < NDUST; i++){ respawn(i); dLife[i] *= drng(); }
+let dustT = 0;
+function updateDust(dt){
+  dustT += dt;
+  for (let i = 0; i < NDUST; i++){
+    dLife[i] -= dt;
+    if (dLife[i] <= 0){ respawn(i); continue; }
+    const j = i*3;
+    dVel[j]   += (Math.sin(dustT*0.31 + i) * 0.004 - dVel[j]) * dt * 0.5;
+    dVel[j+1] += (Math.cos(dustT*0.23 + i*1.7) * 0.003 - dVel[j+1]) * dt * 0.5;
+    dVel[j+2] += (Math.sin(dustT*0.27 + i*2.3) * 0.004 - dVel[j+2]) * dt * 0.5;
+    dPos[j] += dVel[j]*dt*3; dPos[j+1] += dVel[j+1]*dt*3; dPos[j+2] += dVel[j+2]*dt*3;
+    // 빛을 받는지
+    let r = 0, g = 0, b = 0;
+    const p = [dPos[j], dPos[j+1], dPos[j+2]];
+    for (const B of beams){
+      const q = sub(p, B.S), t = dot(q, B.D) / B.DD;
+      if (t < 0 || t > 1) continue;
+      const off = madd(q, B.D, -t);
+      const U = madd(B.U0, sub(B.U1, B.U0), t), Vv = madd(B.V0, sub(B.V1, B.V0), t);
+      const UU = dot(U,U), VV = dot(Vv,Vv);
+      if (UU < 1e-10 || VV < 1e-10) continue;
+      const a = dot(off, U) / UU, c = dot(off, Vv) / VV;
+      if (Math.abs(a) > 0.5 || Math.abs(c) > 0.5) continue;
+      const fall = Math.cos(a * Math.PI) * (1 - 0.6*Math.abs(c)*2);
+      const k = B.w * fall * Math.min(3, B.ws / Math.sqrt(UU));
+      r += B.hue[0]*k; g += B.hue[1]*k; b += B.hue[2]*k;
+    }
+    const tw = 0.75 + 0.25 * Math.sin(dustT * 2.1 + i * 3.7);
+    dCol[j] = r*tw; dCol[j+1] = g*tw; dCol[j+2] = b*tw;
+  }
+  dustGeo.attributes.position.needsUpdate = true;
+  dustGeo.attributes.color.needsUpdate = true;
+}
+
+/* =========================================================
+   4. 화면, 카메라, 렌더링
+   ========================================================= */
+const composer = new EffectComposer(renderer);
+composer.addPass(new RenderPass(scene, camera));
+const bloom = new UnrealBloomPass(new THREE.Vector2(256, 256), 0.32, 0.55, 1.15);
+composer.addPass(bloom);
+composer.addPass(new OutputPass());
+
+const CAM_TGT = new THREE.Vector3(-1.2, 0.55, -1.95);
+let fitCamera = function(){
+  const w = window.innerWidth, h = window.innerHeight, asp = w / h;
+  camera.aspect = asp;
+  const portrait = asp < 0.85;
+  const dir = (portrait ? new THREE.Vector3(3.0, 2.3, 0.35) : new THREE.Vector3(2.6, 1.45, 2.0)).normalize();
+  const dist = portrait ? 3.3 : 2.7;
+  const tgt = CAM_TGT.clone();
+  if (portrait) tgt.set(-1.3, 0.6, -2.1);
+  camera.position.copy(tgt).addScaledVector(dir, dist);
+  camera.lookAt(tgt);
+  camera.updateMatrixWorld();
+  const C = prismCenter();
+  const pts = [
+    [HOLE[0], HOLE[1] + 0.2, HOLE[2]], [C[0], C[1] + 0.2, C[2]], [C[0], 0, C[2]],
+    [-0.1, 0, -2.8], [-0.9, 0, -3.0], [0.2, 0, -2.2]
+  ];
+  const inv = camera.matrixWorldInverse;
+  let need = 0.2;
+  for (const p of pts){
+    const v = new THREE.Vector3(...p).applyMatrix4(inv);
+    const z = -v.z; if (z <= 0.1) continue;
+    need = Math.max(need, Math.abs(v.y) / z, Math.abs(v.x) / z / asp);
+  }
+  camera.fov = Math.min(80, THREE.MathUtils.radToDeg(2 * Math.atan(need / 0.86)));
+  camera.updateProjectionMatrix();
+  renderer.setSize(w, h, false);
+  composer.setSize(w, h);
+  bloom.resolution.set(w * DPR / 2, h * DPR / 2);
+}
+window.addEventListener('resize', () => { fitCamera(); });
+if (window.visualViewport) window.visualViewport.addEventListener('resize', fitCamera);
+
+function renderLightmaps(){
+  const prevClear = renderer.getClearColor(new THREE.Color()), prevA = renderer.getClearAlpha();
+  renderer.setClearColor(0x000000, 0);
+  for (const s of surfaces){
+    renderer.setRenderTarget(s.rt);
+    renderer.clear(true, false, false);
+    if (s.cnt) renderer.render(s.ls, lmCam);
+  }
+  renderer.setRenderTarget(null);
+  renderer.setClearColor(prevClear, prevA);
+}
+
+// 편각 표시
+const devEl = document.getElementById('dev'), bestEl = document.getElementById('best');
+function updateReadout(){
+  if (devNow === null || state.newton){
+    devEl.innerHTML = state.newton ? '뉴턴의 실험 — 흰빛으로 다시 모였나요?' : '';
+    bestEl.classList.remove('on');
+    return;
+  }
+  const d = devNow * 180 / Math.PI;
+  devEl.innerHTML = `꺾인 각 <b>${d.toFixed(1)}°</b>` + (devMin !== null ? ` · 가장 작은 각 ${(devMin*180/Math.PI).toFixed(1)}°` : '');
+  bestEl.classList.toggle('on', devMin !== null && Math.abs(devNow - devMin) < 0.006 && Math.abs(tilt) < 0.05);
+}
+
+/* =========================================================
+   5. 조작 — 끌기, 기울이기
+   ========================================================= */
+let dragging = false, lastX = 0, lastY = 0, lastT = 0, touched = false;
+const hint = document.getElementById('hint');
+canvas.addEventListener('pointerdown', e => {
+  dragging = true; lastX = e.clientX; lastY = e.clientY; lastT = performance.now(); vYaw = 0;
+  canvas.setPointerCapture(e.pointerId); canvas.classList.add('dragging');
+  closeDrawer();
+});
+canvas.addEventListener('pointermove', e => {
+  if (!dragging) return;
+  const s = Math.min(window.innerWidth, window.innerHeight);
+  const dx = e.clientX - lastX, dy = e.clientY - lastY, now = performance.now();
+  const dYaw = dx / s * 2.2;
+  dragYaw += dYaw;
+  dragTilt = Math.max(-0.45, Math.min(0.45, dragTilt + dy / s * 0.9));
+  const dt = Math.max(1, now - lastT);
+  vYaw = vYaw * 0.6 + (dYaw / dt * 1000) * 0.4;
+  lastX = e.clientX; lastY = e.clientY; lastT = now;
+  if (!touched){ touched = true; hint.classList.remove('on'); }
+});
+const endDrag = e => { if (!dragging) return; dragging = false; canvas.classList.remove('dragging'); if (performance.now() - lastT > 80) vYaw = 0; };
+canvas.addEventListener('pointerup', endDrag);
+canvas.addEventListener('pointercancel', endDrag);
+
+let gyroBase = null;
+function screenAngle(){ return (screen.orientation && screen.orientation.angle) || window.orientation || 0; }
+function onOrient(e){
+  if (!state.tilt || e.beta === null) return;
+  const a = ((screenAngle() % 360) + 360) % 360;
+  let lr, fb;
+  if (a === 90){ lr = e.beta; fb = -e.gamma; }
+  else if (a === 270){ lr = -e.beta; fb = e.gamma; }
+  else { lr = e.gamma; fb = e.beta; }
+  if (!gyroBase) gyroBase = { lr, fb };
+  gyroYaw = (lr - gyroBase.lr) * Math.PI / 180 * 1.6;
+  gyroTilt = Math.max(-0.45, Math.min(0.45, (fb - gyroBase.fb) * Math.PI / 180 * 0.6));
+  if (!touched && Math.abs(gyroYaw) > 0.05){ touched = true; hint.classList.remove('on'); }
+}
+window.addEventListener('deviceorientation', onOrient);
+window.addEventListener('orientationchange', () => { gyroBase = null; });
+async function enableTilt(on){
+  if (on && typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function'){
+    try { const r = await DeviceOrientationEvent.requestPermission(); if (r !== 'granted') on = false; } catch (e) { on = false; }
+  }
+  state.tilt = on; gyroBase = null;
+  if (!on){ dragYaw += gyroYaw; gyroYaw = 0; gyroTilt = 0; }
+  togTilt.classList.toggle('on', on);
+}
+
+/* =========================================================
+   6. 서랍 메뉴
+   ========================================================= */
+const drawer = document.getElementById('drawer');
+const menuBtn = document.getElementById('menuBtn');
+const togNewton = document.getElementById('togNewton'), togBeam = document.getElementById('togBeam'), togTilt = document.getElementById('togTilt');
+function closeDrawer(){ drawer.classList.remove('open'); }
+menuBtn.addEventListener('click', e => { e.stopPropagation(); drawer.classList.toggle('open'); });
+function segment(id, key, after){
+  const el = document.getElementById(id);
+  el.addEventListener('click', e => {
+    const b = e.target.closest('button'); if (!b) return;
+    el.querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b));
+    state[key] = b.dataset.v; after && after();
+  });
+}
+let homeYaw = 0, homeOff = 0.12;
+function resetSun(keepRelative){
+  const rel = yaw - homeYaw;
+  homeYaw = setupSun();
+  if (keepRelative){ dragYaw = homeYaw + rel - gyroYaw; yaw = yawT = homeYaw + rel; }
+  dirty = true;
+}
+segment('segTime', 'time', () => { resetSun(true); fitCamera(); });
+segment('segGlass', 'glass', () => { resetSun(true); });
+togNewton.addEventListener('click', () => { state.newton = !state.newton; togNewton.classList.toggle('on', state.newton); dirty = true; });
+togBeam.addEventListener('click', () => { state.beams = !state.beams; togBeam.classList.toggle('on', state.beams); ribbons.visible = dust.visible = state.beams; });
+togTilt.addEventListener('click', () => enableTilt(!state.tilt));
+if (!('DeviceOrientationEvent' in window) || !matchMedia('(pointer:coarse)').matches) togTilt.style.display = 'none';
+document.getElementById('btnFull').addEventListener('click', async () => {
+  const d = document, el = d.documentElement;
+  try {
+    if (d.fullscreenElement || d.webkitFullscreenElement) await (d.exitFullscreen ? d.exitFullscreen() : d.webkitExitFullscreen());
+    else await (el.requestFullscreen ? el.requestFullscreen({ navigationUI: 'hide' }) : el.webkitRequestFullscreen());
+  } catch (e) {}
+});
+if (!(document.documentElement.requestFullscreen || document.documentElement.webkitRequestFullscreen)) document.getElementById('btnFull').style.display = 'none';
+document.getElementById('btnReset').addEventListener('click', () => {
+  dragYaw = homeYaw + homeOff; dragTilt = 0; gyroBase = null; gyroYaw = 0; gyroTilt = 0; vYaw = 0; dirty = true;
+});
+
+/* =========================================================
+   7. 시작
+   ========================================================= */
+homeYaw = setupSun();
+dragYaw = yaw = yawT = homeYaw + homeOff;
+fitCamera();
+compute(); renderLightmaps();
+updateReadout();
+document.getElementById('loading').textContent = '';
+
+const intro = document.getElementById('intro');
+document.getElementById('go').addEventListener('click', async () => {
+  intro.classList.add('hide');
+  if (matchMedia('(pointer:coarse)').matches && 'DeviceOrientationEvent' in window) await enableTilt(true);
+  setTimeout(() => { if (!touched) hint.classList.add('on'); }, 900);
+  setTimeout(() => hint.classList.remove('on'), 9000);
+});
+
+let prevT = performance.now();
+function frame(now){
+  const dt = Math.min(0.05, (now - prevT) / 1000); prevT = now;
+  if (!dragging && Math.abs(vYaw) > 1e-3){ dragYaw += vYaw * dt; vYaw *= Math.pow(0.04, dt); }
+  yawT = dragYaw + gyroYaw;
+  tiltT = Math.max(-0.5, Math.min(0.5, dragTilt + gyroTilt));
+  const k = 1 - Math.pow(0.0005, dt);
+  yaw += (yawT - yaw) * k; tilt += (tiltT - tilt) * k;
+  if (Math.abs(yaw - lastYaw) > 2e-5 || Math.abs(tilt - lastTilt) > 2e-5) dirty = true;
+  if (dirty){
+    lastYaw = yaw; lastTilt = tilt; dirty = false;
+    compute(); renderLightmaps(); updateReadout();
+  }
+  if (state.beams) updateDust(dt);
+  composer.render();
+  requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+window.__ready = true;
+</script>
+</body>
+</html>
