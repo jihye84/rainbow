@@ -217,9 +217,9 @@ const HUE = SPEC.map(c => { const m = Math.max(c[0], c[1], c[2]) || 1; return [c
 
 // 셀마이어 분산식 (λ: µm)
 const GLASS = {
-  crown:   { B:[1.03961212, 0.231792344, 1.01046945], C:[0.00600069867, 0.0200179144, 103.560653], disp: 1.2, tint: 0xffffff },
-  flint:   { B:[1.34533359, 0.209073176, 0.937357162], C:[0.00997743871, 0.0470450767, 111.886764], disp: 3.0, tint: 0xfffcf6 },
-  diamond: { B:[4.3356, 0.3306, 0],                    C:[0.1060*0.1060, 0.1750*0.1750, 1],      disp: 6.0, tint: 0xffffff },
+  crown:   { B:[1.03961212, 0.231792344, 1.01046945], C:[0.00600069867, 0.0200179144, 103.560653], disp: 1.2, apex: 60 },
+  flint:   { B:[1.34533359, 0.209073176, 0.937357162], C:[0.00997743871, 0.0470450767, 111.886764], disp: 3.0, apex: 60 },
+  diamond: { B:[4.3356, 0.3306, 0],                    C:[0.1060*0.1060, 0.1750*0.1750, 1],      disp: 6.0, apex: 34 },   // 빛을 가두지 않도록 꼭지각을 좁게
 };
 function sellmeier(g, lnm){
   const l2 = (lnm/1000) ** 2;
@@ -263,7 +263,22 @@ function holeY(eDeg){ return PC[1] + (PC[0] - SHUT_X) / Math.cos(SUN_AZ) * Math.
 
 // 프리즘 면: 로컬 좌표에서 꼭짓점이 +y(90°), 면의 바깥 법선 270°·30°·150°, 양 끝면 ±z
 const C30 = Math.cos(Math.PI/6), S30 = 0.5;
-const LOCAL_PLANES = [[0,-1,0,INR], [C30,S30,0,INR], [-C30,S30,0,INR], [0,0,1,PL/2], [0,0,-1,PL/2]];
+// 단면 삼각형 (꼭지각 A, 무게중심이 원점)
+let TRI = null, LOCAL_PLANES = null;
+function setShape(Adeg){
+  const A = Adeg * Math.PI / 180;
+  const leg = Adeg === 60 ? PS : 0.16;
+  const half = leg * Math.sin(A/2), h = leg * Math.cos(A/2);
+  TRI = [[0, 2*h/3], [-half, -h/3], [half, -h/3]];
+  const edge = (a, b) => {
+    let n = [b[1]-a[1], -(b[0]-a[0])]; const l = Math.hypot(n[0], n[1]); n = [n[0]/l, n[1]/l];
+    if (n[0]*a[0] + n[1]*a[1] < 0) n = [-n[0], -n[1]];
+    return [n[0], n[1], 0, n[0]*a[0] + n[1]*a[1]];
+  };
+  // 순서: 밑면, 오른쪽, 왼쪽, 양 끝면
+  LOCAL_PLANES = [edge(TRI[1], TRI[2]), edge(TRI[2], TRI[0]), edge(TRI[0], TRI[1]), [0,0,1,PL/2], [0,0,-1,PL/2]];
+}
+setShape(60);
 const _v = new THREE.Vector3();
 function prismPlanes(C, q){
   return LOCAL_PLANES.map(([x,y,z,dd]) => {
@@ -528,12 +543,8 @@ scene.add(spot); scene.add(spot.target);
 
 // ---------- 프리즘과 받침 ----------
 function prismGeometry(){
-  const R = PS / Math.sqrt(3) - 0.0025;
-  const sh = new THREE.Shape();
-  for (let k = 0; k < 3; k++){
-    const a = Math.PI/2 + k * 2*Math.PI/3;
-    k ? sh.lineTo(R*Math.cos(a), R*Math.sin(a)) : sh.moveTo(R*Math.cos(a), R*Math.sin(a));
-  }
+  const sh = new THREE.Shape(), k = 0.965;
+  sh.moveTo(TRI[0][0]*k, TRI[0][1]*k); sh.lineTo(TRI[1][0]*k, TRI[1][1]*k); sh.lineTo(TRI[2][0]*k, TRI[2][1]*k);
   sh.closePath();
   const g = new THREE.ExtrudeGeometry(sh, { depth: PL - 0.005, bevelEnabled: true, bevelThickness: 0.0025, bevelSize: 0.0025, bevelSegments: 2, curveSegments: 1 });
   g.translate(0, 0, -(PL - 0.005)/2);
@@ -546,7 +557,7 @@ const prismMat = new THREE.MeshPhysicalMaterial({
 });
 const brass = new THREE.MeshStandardMaterial({ color: 0xc29a5c, metalness: 1, roughness: 0.32, envMap: envTex, envMapIntensity: 1.0 });
 const baseMat = new THREE.MeshStandardMaterial({ color: 0x2a2018, metalness: 0.3, roughness: 0.45, envMap: envTex, envMapIntensity: 0.6 });
-const pGeo = prismGeometry();
+let pGeo = prismGeometry();
 function makeHolder(){
   const grp = new THREE.Group();
   const prism = new THREE.Mesh(pGeo, prismMat);
@@ -640,6 +651,11 @@ function setupSun(){
   HOLE[1] = holeY(S.e);
   buildShutter(HOLE[1]);
   const g = GLASS[state.glass];
+  if (!TRI || setShape.cur !== g.apex){
+    setShape(g.apex); setShape.cur = g.apex;
+    const old = pGeo; pGeo = prismGeometry();
+    holders.forEach(h => h.prism.geometry = pGeo); old.dispose();
+  }
   nG = LAMBDA.map(l => sellmeier(g, l));
   const n550 = sellmeier(g, 550);
   prismMat.ior = Math.min(2.33, n550);
@@ -660,7 +676,7 @@ function setupSun(){
     orient(a, 0, qq);
     const pl = prismPlanes(C1, qq), n = pl[f].n;
     if (dot(n, d0) > -0.05) return null;
-    const Fc = madd(madd(C1, n, INR), eu, du);
+    const Fc = madd(madd(C1, n, pl[f].d - dot(n, C1)), eu, du);
     const r = trace(madd(Fc, d0, -1), d0, n550, [{ planes: pl }]);
     if (!r || r.sig.length !== 4 || r.sig.includes('r') || +r.sig[1] !== f) return null;
     if (r.fd[2] > d0[2]) return null;    // 안쪽 벽(-z) 쪽으로 꺾이는 경우만
@@ -682,8 +698,8 @@ function setupSun(){
   // 그 면의 한가운데가 빛다발 중심에 오도록 받침을 옮겨 둠
   orient(bestYaw + homeOff, 0, qq);
   {
-    const n = prismPlanes(C1, qq)[bestFace].n;
-    const Fc = madd(C1, n, INR);
+    const P = prismPlanes(C1, qq)[bestFace], n = P.n;
+    const Fc = madd(C1, n, P.d - dot(n, C1));
     C1 = madd(C1, eu, -dot(sub(Fc, PC), eu));
   }
   return bestYaw;
@@ -1010,8 +1026,8 @@ canvas.addEventListener('pointermove', e => {
   const dYaw = dx / s * 2.2;
   dragYaw += dYaw;
   dragTilt = Math.max(-0.45, Math.min(0.45, dragTilt + dy / s * 0.9));
-  const dt = Math.max(1, now - lastT);
-  vYaw = vYaw * 0.6 + (dYaw / dt * 1000) * 0.4;
+  const dt = Math.max(16, now - lastT);
+  vYaw = Math.max(-4, Math.min(4, vYaw * 0.6 + (dYaw / dt * 1000) * 0.4));
   lastX = e.clientX; lastY = e.clientY; lastT = now;
   if (!touched){ touched = true; hint.classList.remove('on'); }
 });
@@ -1021,26 +1037,36 @@ canvas.addEventListener('pointercancel', endDrag);
 
 let gyroBase = null;
 function screenAngle(){ return (screen.orientation && screen.orientation.angle) || window.orientation || 0; }
+// 기울기: 중력 방향(위쪽 벡터)으로 계산해서 폰을 세우거나 눕혀도 값이 튀지 않게
+let gLR = 0, gFB = 0, gPrev = null;
+const wrapPI = x => { while (x > Math.PI) x -= 2*Math.PI; while (x < -Math.PI) x += 2*Math.PI; return x; };
 function onOrient(e){
-  if (!state.tilt || e.beta === null) return;
+  if (!state.tilt || e.beta === null || e.gamma === null) return;
+  const b = e.beta * Math.PI/180, g = e.gamma * Math.PI/180;
+  const ux = -Math.sin(g)*Math.cos(b), uy = Math.sin(b), uz = Math.cos(g)*Math.cos(b);
   const a = ((screenAngle() % 360) + 360) % 360;
-  let lr, fb;
-  if (a === 90){ lr = e.beta; fb = -e.gamma; }
-  else if (a === 270){ lr = -e.beta; fb = e.gamma; }
-  else { lr = e.gamma; fb = e.beta; }
-  if (!gyroBase) gyroBase = { lr, fb };
-  gyroYaw = (lr - gyroBase.lr) * Math.PI / 180 * 1.6;
-  gyroTilt = Math.max(-0.45, Math.min(0.45, (fb - gyroBase.fb) * Math.PI / 180 * 0.6));
+  let sx = ux, sy = uy;
+  if (a === 90){ sx = -uy; sy = ux; } else if (a === 270){ sx = uy; sy = -ux; } else if (a === 180){ sx = -ux; sy = -uy; }
+  const lr = Math.asin(Math.max(-1, Math.min(1, sx)));
+  const fb = Math.atan2(sy, uz);
+  if (!gyroBase){ gyroBase = { lr, fb }; gPrev = { lr, fb }; gLR = 0; gFB = 0; }
+  // 한 번에 크게 튀는 값은 버림
+  const dl = lr - gPrev.lr, df = wrapPI(fb - gPrev.fb);
+  gPrev = { lr, fb };
+  if (Math.abs(dl) > 0.5 || Math.abs(df) > 0.5) return;
+  gLR += dl; gFB += df;
+  gyroYaw = -gLR * 1.6;
+  gyroTilt = Math.max(-0.45, Math.min(0.45, gFB * 0.6));
   if (!touched && Math.abs(gyroYaw) > 0.05){ touched = true; hint.classList.remove('on'); }
 }
 window.addEventListener('deviceorientation', onOrient);
-window.addEventListener('orientationchange', () => { gyroBase = null; });
+window.addEventListener('orientationchange', () => { dragYaw += gyroYaw; gyroYaw = 0; gyroTilt = 0; gyroBase = null; });
 async function enableTilt(on){
   if (on && typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function'){
     try { const r = await DeviceOrientationEvent.requestPermission(); if (r !== 'granted') on = false; } catch (e) { on = false; }
   }
   state.tilt = on; gyroBase = null;
-  if (!on){ dragYaw += gyroYaw; gyroYaw = 0; gyroTilt = 0; }
+  dragYaw += gyroYaw; gyroYaw = 0; gyroTilt = 0;
   togTilt.classList.toggle('on', on);
 }
 
@@ -1065,10 +1091,11 @@ function resetSun(keepRelative){
   const rel = yaw - homeYaw;
   homeYaw = setupSun();
   if (keepRelative){ dragYaw = homeYaw + rel - gyroYaw; yaw = yawT = homeYaw + rel; }
+  else { dragYaw = homeYaw + homeOff - gyroYaw; yaw = yawT = homeYaw + homeOff; dragTilt = 0; }
   dirty = true;
 }
 segment('segTime', 'time', () => { resetSun(true); fitCamera(); });
-segment('segGlass', 'glass', () => { resetSun(true); });
+segment('segGlass', 'glass', () => { resetSun(false); });
 togNewton.addEventListener('click', () => { state.newton = !state.newton; togNewton.classList.toggle('on', state.newton); dirty = true; });
 togBeam.addEventListener('click', () => { state.beams = !state.beams; togBeam.classList.toggle('on', state.beams); ribbons.visible = dust.visible = state.beams; });
 togTilt.addEventListener('click', () => enableTilt(!state.tilt));
