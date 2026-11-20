@@ -76,6 +76,8 @@
   #pad{position:fixed;z-index:4;left:calc(12px + var(--sal));bottom:calc(var(--barh, 60px) + 12px);
     display:grid;grid-template-areas:". f . zi" "l b r zo";gap:6px}
   #pad .zb{display:none}
+  #dField.ground p.more{display:none}
+  #drawer .seg.row button{padding:.4em .55em}
   #pad.drone .zb{display:block}
   #jumps{position:fixed;z-index:4;right:calc(12px + var(--sar));top:calc(10px + var(--sat));display:flex;flex-wrap:wrap;justify-content:flex-end;gap:5px;max-width:min(430px, 58vw);font-size:var(--fs)}
   #jumps button{background:rgba(20,18,16,.62);border:1px solid var(--line);border-radius:99px;padding:.4em .85em;font-size:1em;cursor:pointer;backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
@@ -97,7 +99,7 @@
     <button class="tg" id="tgBundle">빛다발</button>
   </div>
   <div class="grp" id="gField" hidden>
-    <div class="sl"><label for="sunE">해 높이</label><input id="sunE" type="range" min="3" max="50" step="0.5" value="24"><b id="sunV">24°</b></div>
+    <div class="sl"><label for="sunE">해 높이</label><input id="sunE" type="range" min="3" max="70" step="0.5" value="24"><b id="sunV">24°</b></div>
     <div class="sl" style="flex-basis:200px"><label for="tMin">시간 흐름</label><input id="tMin" type="range" min="-30" max="30" step="1" value="0"><b id="tV">0분</b></div>
     <div class="seg" id="segArr"><button data-a="sky" class="on">하늘 가득</button><button data-a="ground">풀밭 위</button><button data-a="cone">원뿔 틀</button><button data-a="tube">유리관 아치</button></div>
     <button class="tg" id="tgPlan">설치도</button>
@@ -124,9 +126,17 @@
  </div>
  <div class="grp" id="dField" hidden>
   <h2>거대 물방울로 만든 들판 무지개</h2>
-  <p class="keep">지름 30cm 유리구에 물을 채워<br>들판 곳곳에 세워 두었어요.<br>구 하나하나는 딱 한 가지 색만 내 눈에 보내요.<br>어떤 색일지는 그 구가<br>내 그림자 머리에서 몇 도 떨어져 있는지로 정해져요.</p>
+  <p class="keep">물을 채운 유리구를<br>들판 곳곳에 두었어요.<br>구 하나하나는 딱 한 가지 색만 내 눈에 보내요.<br>어떤 색일지는 그 구가<br>내 그림자 머리에서 몇 도 떨어져 있는지로 정해져요.</p>
   <p class="more">42° 언저리의 구는 빨강,<br>40.5° 언저리의 구는 보라로 빛나요.<br>51° 언저리에는 색이 거꾸로인 2차 무지개가 생기고,<br>둘 사이는 어두워요.</p>
   <p class="more more3"><b>하늘 가득</b>: 빗줄기처럼 허공에 흩어 둔 구<br><b>풀밭 위</b>: 땅에 깐 구 — 풀밭의 이슬 무지개<br><b>원뿔 틀</b>: 처음 자리에서만 완벽한 무지개<br><b>유리관 아치</b>: 물 채운 관을 무지개 모양으로 휜 것<br>걸어 보면 빛나는 구가 바뀌어요.<br>무지개는 늘 나를 따라오는, 나만의 무지개예요.</p>
+  <div class="grp" id="gGround" hidden>
+   <div class="lab">지형</div>
+   <div class="seg row" id="segTerr"><button data-t="flat" class="on">평지</button><button data-t="up">오르막</button><button data-t="down">내리막</button><button data-t="mound">둔덕</button></div>
+   <div class="lab">관람대 (눈높이)</div>
+   <div class="seg row" id="segEye"><button data-h="1.6" class="on">땅 1.6m</button><button data-h="3.2">3.2m</button><button data-h="5">5m</button></div>
+   <div class="lab">공 재료</div>
+   <div class="seg row" id="segMat"><button data-m="water" class="on">물 42°</button><button data-m="ice">얼음 46°</button><button data-m="glass">유리 23°</button><button data-m="fluoro">플루오로 55°</button></div>
+  </div>
   <div class="lab">유리구 개수</div>
   <div class="seg row" id="segN"><button data-n="10000">1만 개</button><button data-n="30000" class="on">3만 개</button><button data-n="60000">6만 개</button></div>
   <div class="lab">바로 가기</div>
@@ -567,7 +577,71 @@ function drawSkyOverlay(){
 // 유리구 하나가 내 눈에 보내는 빛의 색 — 해의 반대쪽에서 잰 각(0.1° 칸)마다 미리 계산
 const SPH_R = 0.15, EYE_H = 1.6;
 const FIELD = { e: 24, tmin: 0, arr: 'sky', n: 30000, pos: null, eye: [0, EYE_H, 0], yaw: 0, pitch: 6*DEG, move: {}, lit: 0,
-  view: 'walk', dYaw: 0.75, dPitch: -24*DEG, dDist: 190, dT: null, anim: null };
+  view: 'walk', dYaw: 0.75, dPitch: -24*DEG, dDist: 190, dT: null, anim: null,
+  terr: 'flat', eyeH: 1.6, mat: 'water' };
+// 공 재료 (굴절률이 낮을수록 무지개가 커짐)
+const MATS = {
+  water:  { name: '물 채운 유리공', n: l => nWater(l) },
+  ice:    { name: '얼음 공',       n: l => nWater(l) - 0.0235 },
+  glass:  { name: '통유리 구슬',   n: l => { const l2 = (l/1000)**2; return Math.sqrt(1 + 1.03961212*l2/(l2 - 0.00600069867) + 0.231792344*l2/(l2 - 0.0200179144) + 1.01046945*l2/(l2 - 103.560653)); } },
+  fluoro: { name: '플루오로카본 액체', n: l => 1.2445 + 2900/(l*l) }
+};
+const FMAX = 90, FNB = Math.round(FMAX/BIN), FTAB = {};
+function fieldTable(){
+  const key = FIELD.arr === 'ground' ? FIELD.mat : 'water';
+  if (FTAB[key]) return FTAB[key];
+  const nf = MATS[key].n;
+  const L = Array.from({length: 40}, (_, i) => 400 + 300*(i + 0.5)/40);
+  const spec = L.map(specLin), sum = [0,0,0];
+  spec.forEach(c => { sum[0]+=c[0]; sum[1]+=c[1]; sum[2]+=c[2]; });
+  spec.forEach(c => { c[0]/=sum[0]; c[1]/=sum[1]; c[2]/=sum[2]; });
+  const acc = [new Float64Array(FNB*3), new Float64Array(FNB*3)], NS = 5000;
+  L.forEach((l, li) => {
+    const n = nf(l);
+    for (const k of [1, 2]){
+      const h = new Float64Array(FNB);
+      for (let s2 = 0; s2 < NS; s2++){
+        const b = (s2 + 0.5)/NS, i = Math.asin(b), r = Math.asin(b/n);
+        const R = fresnel(Math.cos(i), Math.cos(r), 1, n), w = (1 - R)*(1 - R)*Math.pow(R, k)*b;
+        const th = k === 1 ? (4*r - 2*i)/DEG : 180 + (2*i - 6*r)/DEG;
+        if (th < 0 || th >= FMAX) continue;
+        h[(th/BIN)|0] += w;
+      }
+      for (let j = 0; j < FNB; j++){
+        let s3 = 0, c3 = 0; for (let q = -3; q <= 3; q++){ const jj = j + q; if (jj >= 0 && jj < FNB){ s3 += h[jj]; c3++; } }
+        const v = s3/c3 / Math.sin((j + 0.5)*BIN*DEG);
+        for (let ch = 0; ch < 3; ch++) acc[k-1][j*3+ch] += v*spec[li][ch];
+      }
+    }
+  });
+  let mx = 0; for (let j = Math.round(5/BIN); j < FNB; j++) mx = Math.max(mx, acc[0][j*3], acc[0][j*3+1], acc[0][j*3+2]);
+  const col = [];
+  for (let j = 0; j < FNB; j++){
+    const g = 0.75 / mx;
+    let r = (acc[0][j*3] + acc[1][j*3])*g, gg = (acc[0][j*3+1] + acc[1][j*3+1])*g, b = (acc[0][j*3+2] + acc[1][j*3+2])*g;
+    const lum = 0.2126*r + 0.7152*gg + 0.0722*b, sat = 1.8;
+    r = Math.max(0, lum + (r - lum)*sat) + 0.006; gg = Math.max(0, lum + (gg - lum)*sat) + 0.006; b = Math.max(0, lum + (b - lum)*sat) + 0.007;
+    const m2 = Math.max(r, gg, b, 1e-6), tm = v => Math.round(toSRGB(v / m2) * 255);
+    col.push([tm(r), tm(gg), tm(b), Math.min(1, Math.pow(m2 / 0.55, 1.4))]);
+  }
+  const t1 = [700, 400].map(l => { const n = nf(l); return rainbowAngle(iMin(n, 1), n, 1); });
+  const t2 = [700, 400].map(l => { const n = nf(l); return rainbowAngle(iMin(n, 2), n, 2); });
+  return FTAB[key] = { col, b1: [Math.min(...t1) - 0.6, Math.max(...t1) + 0.4], b2: [Math.min(...t2) - 0.4, Math.max(...t2) + 0.6], th1: rainbowAngle(iMin(nf(589), 1), nf(589), 1) };
+}
+// 지형 (풀밭 위에서만)
+const TERR_NAMES = { flat: '평지', up: '앞쪽 오르막 12°', down: '앞쪽 내리막 12°', mound: '둔덕' };
+const HILLS = [[5, 12, 1.4, 3.5], [-7, 19, 2.2, 5], [3, 29, 3, 7], [-3, 6.5, 0.7, 2.2], [11, 24, 1.6, 4]];
+function groundH(x, z){
+  if (FIELD.arr !== 'ground') return 0;
+  const t = FIELD.terr, k = Math.tan(12*DEG);
+  if (t === 'up') return z > 2 ? (z - 2)*k : 0;
+  if (t === 'down') return z > 2 ? Math.max(-14, -(z - 2)*k) : 0;
+  if (t === 'mound'){ let h = 0; for (const [hx, hz, hh, sg] of HILLS) h += hh*Math.exp(-((x-hx)**2 + (z-hz)**2)/(2*sg*sg)); return h; }
+  return 0;
+}
+const sphR = () => FIELD.arr === 'ground' ? 0.05 : SPH_R;
+function eyeHeight(){ return FIELD.arr === 'ground' ? FIELD.eyeH : EYE_H; }
+function placeEye(){ FIELD.eye[1] = groundH(FIELD.eye[0], FIELD.eye[2]) + eyeHeight(); }
 const BIN_COL = (() => {
   const a = skyRGB[2], out = [];
   for (let j = 0; j < NB; j++){
@@ -585,7 +659,7 @@ const LAT = 37.5*DEG;
 function sunNow(){
   const e0 = FIELD.e*DEG, m = FIELD.tmin || 0;
   if (!m) return { e: e0, daz: 0 };
-  const H0 = Math.acos(Math.min(1, Math.sin(e0)/Math.cos(LAT)));
+  const H0 = Math.acos(Math.min(1, Math.sin(e0)/Math.cos(LAT - Math.max(0, e0 - (90*DEG - LAT)))));
   const H = H0 + m*0.25*DEG;
   const e = Math.asin(Math.cos(LAT)*Math.cos(H));
   const az = h => Math.atan2(Math.sin(h), Math.cos(h)*Math.sin(LAT));
@@ -601,7 +675,7 @@ function buildField(){
   for (let k = 0; k < N; k++){
     let x, y, z;
     if (FIELD.arr === 'sky'){ x = -170 + 340*rnd(); y = 1 + 115*rnd(); z = 25 + 150*rnd(); }
-    else if (FIELD.arr === 'ground'){ const g = Math.sqrt(N / 30000); x = (-32 + 64*rnd())*g; y = SPH_R; z = -6 + 66*g*rnd(); }   // 1㎡에 7~8개
+    else if (FIELD.arr === 'ground'){ const g = Math.sqrt(N / 30000); x = (-16 + 32*rnd())*g; z = (-8 + 38*rnd())*g; y = groundH(x, z) + 0.05; }   // 지름 10cm 구슬, 1㎡에 25개쯤
     else {
       for (let tries = 0; tries < 40; tries++){
         const sec = rnd() < 0.22;
@@ -615,6 +689,7 @@ function buildField(){
     P[k*3] = x; P[k*3+1] = y; P[k*3+2] = z;
   }
   FIELD.pos = FIELD.arr === 'tube' ? new Float32Array(0) : P;
+  placeEye();
   FIELD.tubes = FIELD.arr === 'tube' ? buildTubes() : null;
   dirty = true;
 }
@@ -674,8 +749,8 @@ function drawTubes(proj, f, eye, drone){
           const up = [u[0]-a[0]*ax, u[1]-a[1]*ax, u[2]-a[2]*ax], Ap = [A[0]-a[0]*aa, A[1]-a[1]*aa, A[2]-a[2]*aa];
           const cth = (up[0]*Ap[0] + up[1]*Ap[1] + up[2]*Ap[2]) / Math.hypot(...up) / Math.hypot(...Ap);
           const th = Math.acos(Math.max(-1, Math.min(1, cth))) / DEG;
-          if (th < SKY_MAX){
-            const c = BIN_COL[(th/BIN)|0], al = c[3]*fall;
+          if (th < FMAX){
+            const c = fieldTable().col[(th/BIN)|0], al = c[3]*fall;
             if (al > 0.03){
               if (th >= 40 && th <= 42.8) lit++;
               ctx.strokeStyle = `rgba(${c[0]},${c[1]},${c[2]},${Math.min(1, al)*(drone && w > 6 ? 0.55 : 1)})`; ctx.lineWidth = drone && w > 6 ? w*0.45 : w;
@@ -735,7 +810,17 @@ function planNumbers(){
 }
 function drawPlan(proj, f, eye, A, S){
   const N0 = planNumbers();
-  const E0 = [0, EYE_H, 0];
+  const E0 = [0, eyeHeight(), 0];
+  if (FIELD.arr === 'ground' && FIELD.eyeH > 1.6){
+    // 관람대
+    const hp = FIELD.eyeH - 1.6, c = [[-1.2,-1.2],[1.2,-1.2],[1.2,1.2],[-1.2,1.2]];
+    const top = c.map(([x, z]) => proj([x, hp, z])), bot = c.map(([x, z]) => proj([x, 0, z]));
+    if (top.every(Boolean) && bot.every(Boolean)){
+      ctx.strokeStyle = 'rgba(120,96,70,1)'; ctx.lineWidth = 1.5;
+      for (let i = 0; i < 4; i++){ ctx.beginPath(); ctx.moveTo(top[i][0], top[i][1]); ctx.lineTo(bot[i][0], bot[i][1]); ctx.stroke(); }
+      ctx.fillStyle = 'rgba(160,128,92,.85)'; ctx.beginPath(); top.forEach((q, i) => i ? ctx.lineTo(q[0], q[1]) : ctx.moveTo(q[0], q[1])); ctx.fill();
+    }
+  }
   ctx.save();
   // 해에서 오는 빛 (관람자 머리 위로 지나감)
   const sd = sunVec(), from = [E0[0] + sd[0]*70, E0[1] + sd[1]*70, E0[2] + sd[2]*70];
@@ -807,10 +892,10 @@ function drawPlan(proj, f, eye, A, S){
   // 관람 자리
   const ring = []; for (let k = 0; k <= 24; k++){ const t = k/24*Math.PI*2; ring.push(proj([Math.cos(t)*2.5, 0, Math.sin(t)*2.5])); }
   if (ring.every(Boolean)){ ctx.fillStyle = 'rgba(232,200,142,.35)'; ctx.strokeStyle = 'rgba(232,200,142,1)'; ctx.lineWidth = 1.5; ctx.beginPath(); ring.forEach((q, i) => i ? ctx.lineTo(q[0], q[1]) : ctx.moveTo(q[0], q[1])); ctx.fill(); ctx.stroke(); }
-  const pf = proj([0, 0, 0]), ph = proj(E0);
+  const pf = proj([0, eyeHeight() - 1.6, 0]), ph = proj(E0);
   if (pf && ph){ ctx.strokeStyle = '#fff4dc'; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(pf[0], pf[1]); ctx.lineTo(ph[0], ph[1]); ctx.stroke();
     ctx.fillStyle = '#fff4dc'; ctx.beginPath(); ctx.arc(ph[0], ph[1], 4, 0, 7); ctx.fill();
-    label(ph[0] + 10, ph[1] - 8, '관람 자리 · 눈높이 1.6m', 'rgba(255,240,210,1)'); }
+    label(ph[0] + 10, ph[1] - 8, `관람 자리 · 눈높이 ${eyeHeight()}m`, 'rgba(255,240,210,1)'); }
   // 치수선
   if (FIELD.arr === 'tube' || FIELD.arr === 'cone'){
     const T = N0.top, G = [T[0], 0, T[2]], Lr = [N0.leg[0], 0, N0.leg[2]], Ll = [-N0.leg[0], 0, N0.leg[2]];
@@ -851,9 +936,18 @@ function drawPlanText(fs, y){
     L1.push([`관람자에게서 55~125m, 원뿔 모양으로 배치`]);
     L1.push([`해가 움직이면 10분쯤 뒤 무지개 띠가 틀 밖으로 밀려나요`]);
   } else if (FIELD.arr === 'ground'){
+    const FT = fieldTable(), th = FT.th1, e = FIELD.e, hgt = FIELD.eyeH;
     L1.push(['설치도 — 풀밭 위', 1]);
-    L1.push([`유리구 ${FIELD.n.toLocaleString()}개를 땅에 촘촘히 (1㎡에 7~8개)`]);
-    L1.push([`어느 시각, 어느 자리에서든 발치에 이슬 무지개`]);
+    L1.push([`지름 10cm ${MATS[FIELD.mat].name} ${FIELD.n.toLocaleString()}개 · 무지개 각 ${th.toFixed(1)}°`]);
+    L1.push([`${TERR_NAMES[FIELD.terr]} · 관람대 위 눈높이 ${hgt}m`]);
+    if (FIELD.terr === 'flat'){
+      if (e > th){
+        const far = hgt / Math.tan((e - th)*DEG), nearAng = e + th;
+        const near = nearAng >= 90 ? -hgt*Math.tan((nearAng - 90)*DEG) : hgt / Math.tan(nearAng*DEG);
+        L1.push([`평지 고리: 발 ${near < 0 ? '뒤 ' + (-near).toFixed(1) : '앞 ' + near.toFixed(1)}m부터 앞 ${far.toFixed(1)}m까지`]);
+      } else L1.push([`해가 ${th.toFixed(0)}°보다 낮아 무지개 양팔이 지평선까지 뻗어요`]);
+      L1.push(['눈높이를 두 배로 하면 무지개도 두 배로 커져요']);
+    } else L1.push(['무지개는 원뿔이 땅을 자르는 선을 따라 생겨요']);
   } else {
     L1.push(['설치도 — 하늘 가득', 1]);
     L1.push([`유리구 ${FIELD.n.toLocaleString()}개, 높이 115m까지 허공에`]);
@@ -909,6 +1003,15 @@ function renderField(){
   }
   // 바닥 줄 (걸을 때 움직임이 보이게)
   ctx.strokeStyle = 'rgba(20,30,10,.35)'; ctx.lineWidth = 1;
+  if (F.arr === 'ground' && F.terr !== 'flat'){
+    // 지형을 따라 휘는 격자 (2m 간격 표본)
+    ctx.beginPath();
+    const G2 = 2, span = 70;
+    const line = (fx, fz) => { let pen = false; for (let t = -span; t <= span; t += G2){ const [x, z] = fx(t), q = proj([x, groundH(x, z), z]);
+      if (q){ pen ? ctx.lineTo(q[0], q[1]) : ctx.moveTo(q[0], q[1]); pen = true; } else pen = false; } };
+    for (let k = -30; k <= 30; k += (F.terr === 'mound' ? 1 : 2)){ const c = k*2; line(t => [c, 25 + t]); line(t => [t, 25 + c]); }
+    ctx.stroke();
+  } else {
   const gx0 = Math.floor(cam[0]/10)*10, gz0 = Math.floor(cam[2]/10)*10, GN = drone ? 25 : 12;
   ctx.beginPath();
   for (let k = -GN; k <= GN; k++){
@@ -925,16 +1028,23 @@ function renderField(){
     }
   }
   ctx.stroke();
-  // 내 그림자
-  const head = [eye[0] + A[0]*EYE_H/A[1]*-1, 0, eye[2] + A[2]*EYE_H/(-A[1])];
-  const sh = [[eye[0]-0.22, 0, eye[2]], [eye[0]+0.22, 0, eye[2]], [head[0]+0.15, 0, head[2]], [head[0]-0.15, 0, head[2]]].map(proj);
+  }
+  // 내 그림자 (해의 반대쪽 축이 땅에 닿는 곳이 그림자 머리)
+  const feetY = groundH(eye[0], eye[2]);
+  let head = null;
+  if (A[1] < -0.01){ for (let t = 0.2; t < 400; t *= 1.04){ const q = [eye[0] + A[0]*t, eye[1] + A[1]*t, eye[2] + A[2]*t]; if (q[1] <= groundH(q[0], q[2])){ head = [q[0], groundH(q[0], q[2]), q[2]]; break; } } }
+  if (!head) head = [eye[0], feetY, eye[2]];
+  const plat = eye[1] - feetY - 1.6;   // 관람대 높이
+  const shs = [[eye[0]-0.22, feetY, eye[2]], [eye[0]+0.22, feetY, eye[2]], [head[0]+0.15, head[1], head[2]], [head[0]-0.15, head[1], head[2]]];
+  const sh = shs.map(proj);
   if (sh.every(Boolean)){
     ctx.fillStyle = 'rgba(10,14,6,.45)'; ctx.beginPath(); ctx.moveTo(sh[0][0], sh[0][1]); for (const q of sh.slice(1)) ctx.lineTo(q[0], q[1]); ctx.fill();
     const hq = proj(head); if (hq){ ctx.beginPath(); ctx.ellipse(hq[0], hq[1], Math.max(2, f*0.18/hq[2]), Math.max(1.5, f*0.1/hq[2]), 0, 0, 7); ctx.fill(); }
   }
   // 유리구
   const P = F.pos, N = P.length / 3;
-  if (!fieldBuckets) fieldBuckets = Array.from({length: NB*3}, () => []);
+  const FT = fieldTable();
+  if (!fieldBuckets) fieldBuckets = Array.from({length: FNB*3}, () => []);
   for (const b of fieldBuckets) b.length = 0;
   const outlines = [];
   let lit = 0;
@@ -945,31 +1055,32 @@ function renderField(){
     const dist = Math.sqrt(dx*dx + dy*dy + dz*dz);
     const cosT = (dx*A[0] + dy*A[1] + dz*A[2]) / dist;
     const th = Math.acos(Math.max(-1, Math.min(1, cosT))) / DEG;
-    if ((th >= 40 && th <= 42.8) || (th >= 50 && th <= 54)) lit++;
+    if ((th >= FT.b1[0] && th <= FT.b1[1]) || (th >= FT.b2[0] && th <= FT.b2[1])) lit++;
     if (z < 0.4) continue;
     const sx = w/2 + f*(cx_*rt[0] + cy2*rt[1] + cz_*rt[2])/z, sy = h/2 - f*(cx_*up[0] + cy2*up[1] + cz_*up[2])/z;
     if (sx < -10 || sx > w + 10 || sy < -10 || sy > h + 10) continue;
-    const rpx = f*SPH_R/z;
+    const rpx = f*sphR()/z;
     if (rpx > 2.2) outlines.push([sx, sy, rpx]);
-    if (th >= SKY_MAX || !sunUp) continue;
+    if (th >= FMAX || !sunUp) continue;
     const j = (th/BIN)|0;
     const al = drone ? 2 : dist < 25 ? 2 : dist < 70 ? 1 : 0;
-    fieldBuckets[j*3 + al].push(sx, sy, Math.min(7, Math.max(1.8, rpx*0.55)));
+    fieldBuckets[j*3 + al].push(sx, sy, Math.min(F.arr === 'ground' ? 10 : 7, Math.max(F.arr === 'ground' ? 2.6 : 1.8, rpx*0.55)));
   }
   F.lit = lit;
   // 가까운 구의 유리 테두리
+  const lightGlass = F.arr === 'ground';
   for (const [x, y, r] of outlines){
-    const big = r > 12;
-    ctx.fillStyle = big ? 'rgba(110,160,200,.28)' : 'rgba(150,190,220,.05)';
-    ctx.strokeStyle = big ? 'rgba(230,240,250,.6)' : 'rgba(220,235,245,.14)'; ctx.lineWidth = big ? 1.5 : 1;
+    const big = r > 12 && !lightGlass;
+    ctx.fillStyle = big ? 'rgba(110,160,200,.28)' : lightGlass ? 'rgba(150,190,220,.04)' : 'rgba(150,190,220,.05)';
+    ctx.strokeStyle = big ? 'rgba(230,240,250,.6)' : lightGlass ? 'rgba(220,235,245,.1)' : 'rgba(220,235,245,.14)'; ctx.lineWidth = big ? 1.5 : 1;
     ctx.beginPath(); ctx.arc(x, y, r, 0, 7); ctx.fill(); ctx.stroke();
     if (big){ ctx.fillStyle = 'rgba(255,255,255,.55)'; ctx.beginPath(); ctx.ellipse(x - r*0.35, y - r*0.4, r*0.18, r*0.1, -0.6, 0, 7); ctx.fill(); }
   }
   // 반짝임 (빛을 보낸 색) — 겹쳐도 색이 하얗게 날아가지 않도록 덧칠
   ctx.globalCompositeOperation = 'source-over';
   const AL = [0.55, 0.8, 1];
-  for (let j = 0; j < NB; j++){
-    const c = BIN_COL[j];
+  for (let j = 0; j < FNB; j++){
+    const c = FT.col[j];
     for (let al = 0; al < 3; al++){
       const arr = fieldBuckets[j*3 + al]; if (!arr.length) continue;
       const alpha = AL[al] * c[3]; if (alpha < 0.02) continue;
@@ -996,6 +1107,12 @@ function renderField(){
   else ctx.fillText(`무지개 빛을 보내는 구 ${lit.toLocaleString()}개 / ${N.toLocaleString()}개`, 14, y);
   y += fs*1.5;
   if (F.e > 42 && F.arr === 'sky'){ ctx.fillStyle = 'rgba(232,200,142,1)'; ctx.fillText('해가 42°보다 높아 무지개가 땅 아래로 내려갔어요', 14, y); }
+  if (F.arr === 'ground'){
+    ctx.fillText(`지름 10cm ${MATS[F.mat].name} · 무지개 각 ${FT.th1.toFixed(1)}° · ${TERR_NAMES[F.terr]} · 눈높이 ${F.eyeH}m`, 14, y); y += fs*1.5;
+    const slope = F.terr === 'up' ? 12 : F.terr === 'down' ? -12 : 0;
+    ctx.fillStyle = 'rgba(232,200,142,1)';
+    ctx.fillText(F.e + slope > FT.th1 ? '땅 위에 닫힌 무지개 고리가 생겨요 (발밑 쪽도 둘러보세요)' : `해를 ${Math.ceil(FT.th1 - slope)}°보다 높이면 고리가 닫혀요`, 14, y);
+  }
   ctx.shadowBlur = 0;
 }
 
@@ -1030,6 +1147,7 @@ function loop(now){
     if (vx || vz){
       FIELD.eye[0] = Math.max(-150, Math.min(150, FIELD.eye[0] + vx*sp*dt));
       FIELD.eye[2] = Math.max(-80, Math.min(160, FIELD.eye[2] + vz*sp*dt));
+      placeEye();
       dirty = true;
     }
   }
@@ -1108,7 +1226,7 @@ sunE.addEventListener('input', () => {
 document.getElementById('segArr').addEventListener('click', e => {
   const b = e.target.closest('button'); if (!b) return;
   document.querySelectorAll('#segArr button').forEach(x => x.classList.toggle('on', x === b));
-  FIELD.arr = b.dataset.a; FIELD.pitch = (FIELD.arr === 'ground' ? -32 : 6) * DEG; FIELD.dT = droneTarget(); FIELD.dDist = 190; FIELD.dYaw = 0.75; FIELD.dPitch = -24*DEG; buildField(); refreshJumps();
+  FIELD.arr = b.dataset.a; syncGroundUI(); FIELD.pitch = (FIELD.arr === 'ground' ? -42 : 6) * DEG; FIELD.dT = droneTarget(); FIELD.dDist = 190; FIELD.dYaw = 0.75; FIELD.dPitch = -24*DEG; buildField(); refreshJumps();
 });
 const tMin = document.getElementById('tMin'), tV = document.getElementById('tV');
 tMin.addEventListener('input', () => { FIELD.tmin = +tMin.value; tV.textContent = (FIELD.tmin > 0 ? '+' : '') + FIELD.tmin + '분'; dirty = true; });
@@ -1123,7 +1241,7 @@ function nearestSphere(q){
   return best < 0 ? q : [P[best*3], P[best*3+1], P[best*3+2]];
 }
 function jumpList(){
-  const L = [['전체', () => flyTo(droneTarget(), 190, 0.75, -24*DEG)], ['관람 자리', () => flyTo([0, 1.3, 2], 7, 0.35, -10*DEG)]];
+  const L = [['전체', () => flyTo(droneTarget(), 190, 0.75, -24*DEG)], ['관람 자리', () => flyTo([0, eyeHeight() - 0.3, 2], 7, 0.35, -10*DEG)]];
   if (FIELD.arr === 'tube'){
     const N0 = planNumbers();
     L.push(['아치 다리', () => flyTo([N0.leg[0] - 1.5, 1.2, N0.leg[2]], 9, -0.9, -12*DEG)]);
@@ -1134,7 +1252,8 @@ function jumpList(){
     L.push(['꼭대기 구', () => { const q = nearestSphere([0, 30, 90]); flyTo([q[0], q[1] - 1, q[2]], 7, 0.3, -15*DEG); }]);
     L.push(['옆에서', () => flyTo([0, 12, 70], 110, Math.PI/2, -4*DEG)]);
   } else if (FIELD.arr === 'ground'){
-    L.push(['발치의 구', () => flyTo([3, 0.3, 6], 4, 0.4, -25*DEG)]);
+    L.push(['발치의 구슬', () => flyTo([2, groundH(2, 5) + 0.1, 5], 2.5, 0.4, -30*DEG)]);
+    L.push(['위에서', () => flyTo([0, 0, 8], 40, 0.01, -80*DEG)]);
   } else {
     L.push(['가까운 구', () => { const q = nearestSphere([10, 15, 40]); flyTo(q, 5, 0.4, -8*DEG); }]);
   }
@@ -1152,12 +1271,27 @@ tgPlan.addEventListener('click', () => {
   if (FIELD.view === 'drone' && !FIELD.dT) FIELD.dT = droneTarget();
   refreshJumps(); dirty = true;
 });
+function syncGroundUI(){
+  const g = FIELD.arr === 'ground';
+  document.getElementById('gGround').hidden = !g;
+  document.getElementById('dField').classList.toggle('ground', g);
+}
+function segBind(id, attr, fn){
+  document.getElementById(id).addEventListener('click', e => {
+    const b = e.target.closest('button'); if (!b) return;
+    document.querySelectorAll('#' + id + ' button').forEach(x => x.classList.toggle('on', x === b));
+    fn(b.dataset[attr]);
+  });
+}
+segBind('segTerr', 't', v => { FIELD.terr = v; buildField(); });
+segBind('segEye', 'h', v => { FIELD.eyeH = +v; placeEye(); dirty = true; });
+segBind('segMat', 'm', v => { FIELD.mat = v; dirty = true; });
 document.getElementById('segN').addEventListener('click', e => {
   const b = e.target.closest('button'); if (!b) return;
   document.querySelectorAll('#segN button').forEach(x => x.classList.toggle('on', x === b));
   FIELD.n = +b.dataset.n; buildField();
 });
-document.getElementById('goHome').addEventListener('click', () => { FIELD.eye = [0, EYE_H, 0]; FIELD.yaw = 0; FIELD.pitch = (FIELD.arr === 'ground' ? -32 : 6) * DEG; dirty = true; drawer.classList.remove('open'); });
+document.getElementById('goHome').addEventListener('click', () => { FIELD.eye = [0, EYE_H, 0]; placeEye(); FIELD.yaw = 0; FIELD.pitch = (FIELD.arr === 'ground' ? -42 : 6) * DEG; dirty = true; drawer.classList.remove('open'); });
 document.getElementById('goFull2').addEventListener('click', () => document.getElementById('goFull').click());
 // 걷기: 버튼을 누르고 있는 동안, 키보드 화살표·WASD
 document.querySelectorAll('#pad button').forEach(btn => {
