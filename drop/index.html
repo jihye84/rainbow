@@ -69,6 +69,14 @@
   @media (max-height:560px){ #drawer p.more{display:none} }
   @media (max-height:430px){ #drawer p{display:none} #drawer p.keep{display:block} }
 
+  a.ib{color:inherit;text-decoration:none;display:inline-block}
+  .grp{display:contents}
+  [hidden]{display:none!important}
+  #pad{position:fixed;z-index:4;left:calc(12px + var(--sal));bottom:calc(var(--barh, 60px) + 12px);
+    display:grid;grid-template-areas:". f ." "l b r";gap:6px}
+  #pad button{width:46px;height:42px;border-radius:12px;border:1px solid var(--line);background:rgba(20,18,16,.55);
+    font-size:16px;cursor:pointer;touch-action:none;backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
+  #pad button.on{background:rgba(232,200,142,.3)}
   #inapp{position:fixed;inset:0;z-index:50;display:none;align-items:center;justify-content:center;padding:24px;background:rgba(7,8,12,.95);text-align:center;font-size:15px;line-height:1.8}
   #inapp.on{display:flex}
 </style>
@@ -77,13 +85,25 @@
 <canvas id="c"></canvas>
 
 <div id="bar">
-  <div class="sl"><label for="ang">빛이 들어가는 각도</label><input id="ang" type="range" min="0" max="89" step="0.1" value="40"><b id="angV">40.0°</b></div>
-  <div class="seg" id="segK"><button data-k="1" class="on">1차 무지개</button><button data-k="2">2차 무지개</button><button data-k="3">둘 다</button></div>
-  <button class="tg" id="tgBundle">빛다발</button>
-  <button class="ib" id="btnInfo" aria-label="실험 이야기와 설정">ⓘ</button>
+  <div class="seg" id="segMode"><button data-m="flask" class="on">물병 실험</button><button data-m="field">들판 무지개</button></div>
+  <div class="grp" id="gFlask">
+    <div class="sl"><label for="ang">빛이 들어가는 각도</label><input id="ang" type="range" min="0" max="89" step="0.1" value="40"><b id="angV">40.0°</b></div>
+    <div class="seg" id="segK"><button data-k="1" class="on">1차 무지개</button><button data-k="2">2차 무지개</button><button data-k="3">둘 다</button></div>
+    <button class="tg" id="tgBundle">빛다발</button>
+  </div>
+  <div class="grp" id="gField" hidden>
+    <div class="sl"><label for="sunE">해 높이</label><input id="sunE" type="range" min="3" max="50" step="0.5" value="24"><b id="sunV">24°</b></div>
+    <div class="seg" id="segArr"><button data-a="sky" class="on">하늘 가득</button><button data-a="ground">풀밭 위</button><button data-a="cone">원뿔 틀</button></div>
+  </div>
+  <button class="ib" id="btnInfo" aria-label="설명과 설정">ⓘ</button>
+</div>
+<div id="pad" hidden>
+  <button data-d="f" style="grid-area:f">▲</button><button data-d="l" style="grid-area:l">◀</button>
+  <button data-d="b" style="grid-area:b">▼</button><button data-d="r" style="grid-area:r">▶</button>
 </div>
 
 <div id="drawer">
+ <div class="grp" id="dFlask">
   <h2>디트리히와 알파리시의 실험</h2>
   <p class="keep">14세기 초, 독일의 수도사인<br>프라이베르크의 디트리히와<br>페르시아의 학자 카말 알딘 알파리시는<br>서로를 모른 채 같은 생각을 했어요.<br>물을 가득 채운 둥근 유리병을<br>커다란 빗방울로 삼아 햇빛을 비춰 본 거예요.</p>
   <p class="more">두 사람은 밝혀냈어요.<br>1차 무지개는 빗방울 안에서<br>두 번 꺾이고 한 번 반사된 빛이고,<br>2차 무지개는 두 번 반사된 빛이라는 것을요.<br>2차 무지개의 색 순서가 거꾸로인 까닭도<br>이 길에서 나와요.</p>
@@ -92,6 +112,17 @@
   <div class="seg row" id="segCol"><button data-c="white" class="on">햇빛</button><button data-c="red">빨강</button><button data-c="green">초록</button><button data-c="violet">보라</button></div>
   <div class="lab">바로 가기</div>
   <div class="row"><button class="ib" id="goMin">가장 밝은 각도로</button><button class="ib" id="goFull">전체 화면</button><a class="ib" href="../" style="text-decoration:none">프리즘 무지개 →</a></div>
+ </div>
+ <div class="grp" id="dField" hidden>
+  <h2>거대 물방울로 만든 들판 무지개</h2>
+  <p class="keep">지름 30cm 유리구에 물을 채워<br>들판 곳곳에 세워 두었어요.<br>구 하나하나는 딱 한 가지 색만 내 눈에 보내요.<br>어떤 색일지는 그 구가<br>내 그림자 머리에서 몇 도 떨어져 있는지로 정해져요.</p>
+  <p class="more">42° 언저리의 구는 빨강,<br>40.5° 언저리의 구는 보라로 빛나요.<br>51° 언저리에는 색이 거꾸로인 2차 무지개가 생기고,<br>둘 사이는 어두워요.</p>
+  <p class="more more3"><b>하늘 가득</b>: 빗줄기처럼 허공에 흩어 둔 구<br><b>풀밭 위</b>: 땅에 깐 구 — 풀밭의 이슬 무지개<br><b>원뿔 틀</b>: 처음 자리에서만 완벽한 무지개<br>걸어 보면 빛나는 구가 바뀌어요.<br>무지개는 늘 나를 따라오는, 나만의 무지개예요.</p>
+  <div class="lab">유리구 개수</div>
+  <div class="seg row" id="segN"><button data-n="10000">1만 개</button><button data-n="30000" class="on">3만 개</button><button data-n="60000">6만 개</button></div>
+  <div class="lab">바로 가기</div>
+  <div class="row"><button class="ib" id="goHome">처음 자리로</button><button class="ib" id="goFull2">전체 화면</button><a class="ib" href="../" style="text-decoration:none">프리즘 무지개 →</a></div>
+ </div>
 </div>
 
 <div id="inapp"><div>이 앱 안의 브라우저에서는 제대로 보이지 않아요.<br>⋯ 메뉴에서 <b>'Safari로 열기'</b>를 눌러 주세요.</div></div>
@@ -205,7 +236,7 @@ const skyRGB = (() => {
 const cv = document.getElementById('c'), ctx = cv.getContext('2d');
 const bar = document.getElementById('bar'), drawer = document.getElementById('drawer');
 const ang = document.getElementById('ang'), angV = document.getElementById('angV');
-const state = { i: 40, k: 1, bundle: false, col: 'white' };
+const state = { i: 40, k: 1, bundle: false, col: 'white', mode: 'flask' };
 let W = 0, H = 0, DPR = 1, L = {}, skyImg = null, dirty = true;
 
 function layout(){
@@ -213,7 +244,7 @@ function layout(){
   W = window.innerWidth; H = window.innerHeight;
   const bh = bar.offsetHeight;
   document.documentElement.style.setProperty('--barh', bh + 'px');
-  const ah = H - bh;
+  const ah = H - bh; L.ah = ah;
   cv.width = W*DPR; cv.height = ah*DPR; cv.style.width = W + 'px'; cv.style.height = ah + 'px';
   const top = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--sat')) || 0;
   if (W >= ah * 1.15){
@@ -487,6 +518,7 @@ function drawGraph(){
 function render(){
   ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
   ctx.fillStyle = '#07080c'; ctx.fillRect(0, 0, W, H);
+  if (state.mode === 'field'){ renderField(); return; }
   drawMain();
   ctx.setTransform(1, 0, 0, 1, 0, 0);
   drawSkyPixels();
@@ -522,7 +554,180 @@ function drawSkyOverlay(){
   ctx.textAlign = 'left';
 }
 
-function loop(){ if (dirty){ dirty = false; render(); } requestAnimationFrame(loop); }
+/* ================= 들판 무지개 ================= */
+// 유리구 하나가 내 눈에 보내는 빛의 색 — 해의 반대쪽에서 잰 각(0.1° 칸)마다 미리 계산
+const SPH_R = 0.15, EYE_H = 1.6;
+const FIELD = { e: 24, arr: 'sky', n: 30000, pos: null, eye: [0, EYE_H, 0], yaw: 0, pitch: 6*DEG, move: {}, lit: 0 };
+const BIN_COL = (() => {
+  const a = skyRGB[2], out = [];
+  for (let j = 0; j < NB; j++){
+    const g = 0.75;
+    let r = a[j*3]*g, gg = a[j*3+1]*g, b = a[j*3+2]*g;
+    const lum = 0.2126*r + 0.7152*gg + 0.0722*b, sat = 1.8;          // 색을 조금 더 또렷하게
+    r = Math.max(0, lum + (r - lum)*sat) + 0.006; gg = Math.max(0, lum + (gg - lum)*sat) + 0.006; b = Math.max(0, lum + (b - lum)*sat) + 0.007;  // + 겉면 반사 약간
+    const mx = Math.max(r, gg, b, 1e-6), tm = v => Math.round(toSRGB(v / mx) * 255);
+    out.push([tm(r), tm(gg), tm(b), Math.min(1, Math.pow(mx / 0.55, 1.4))]);   // 밝기는 투명도로
+  }
+  return out;
+})();
+function sunVec(){ const e = FIELD.e*DEG; return [0, Math.sin(e), -Math.cos(e)]; }     // 해는 뒤쪽(-z) 하늘에
+function antiVec(){ const s = sunVec(); return [-s[0], -s[1], -s[2]]; }
+function mulberry(a){ return () => { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+function buildField(){
+  const N = FIELD.n, P = new Float32Array(N*3), rnd = mulberry(7 + N);
+  const A = antiVec(), e = FIELD.e*DEG, B2 = [0, Math.cos(e), Math.sin(e)];
+  for (let k = 0; k < N; k++){
+    let x, y, z;
+    if (FIELD.arr === 'sky'){ x = -170 + 340*rnd(); y = 1 + 115*rnd(); z = 25 + 150*rnd(); }
+    else if (FIELD.arr === 'ground'){ const g = Math.sqrt(N / 30000); x = (-32 + 64*rnd())*g; y = SPH_R; z = -6 + 66*g*rnd(); }   // 1㎡에 7~8개
+    else {
+      for (let tries = 0; tries < 40; tries++){
+        const sec = rnd() < 0.22;
+        const th = (sec ? 50 + 3.6*rnd() : 40.1 + 2.6*rnd()) * DEG, ph = 2*Math.PI*rnd(), r = 55 + 70*rnd();
+        const ct = Math.cos(th), st = Math.sin(th), cp = Math.cos(ph), sp = Math.sin(ph);
+        const d = [A[0]*ct + st*cp, A[1]*ct + B2[1]*st*sp, A[2]*ct + B2[2]*st*sp];
+        x = d[0]*r; y = EYE_H + d[1]*r; z = d[2]*r;
+        if (y > 0.4) break;
+      }
+    }
+    P[k*3] = x; P[k*3+1] = y; P[k*3+2] = z;
+  }
+  FIELD.pos = P;
+  dirty = true;
+}
+let fieldBuckets = null;
+function renderField(){
+  const w = W, h = L.ah, F = FIELD, eye = F.eye;
+  const f = Math.max(w, h) / (2*Math.tan(52*DEG));
+  const cy_ = Math.cos(F.yaw), sy_ = Math.sin(F.yaw), cp = Math.cos(F.pitch), sp = Math.sin(F.pitch);
+  const fw = [sy_*cp, sp, cy_*cp], rt = [cy_, 0, -sy_], up = [-sy_*sp, cp, -cy_*sp];
+  const proj = p => {
+    const d = [p[0]-eye[0], p[1]-eye[1], p[2]-eye[2]];
+    const z = d[0]*fw[0] + d[1]*fw[1] + d[2]*fw[2];
+    if (z < 0.3) return null;
+    return [w/2 + f*(d[0]*rt[0] + d[1]*rt[1] + d[2]*rt[2])/z, h/2 - f*(d[0]*up[0] + d[1]*up[1] + d[2]*up[2])/z, z];
+  };
+  const projDir = d => {
+    const z = d[0]*fw[0] + d[1]*fw[1] + d[2]*fw[2]; if (z < 0.02) return null;
+    return [w/2 + f*(d[0]*rt[0] + d[1]*rt[1] + d[2]*rt[2])/z, h/2 - f*(d[0]*up[0] + d[1]*up[1] + d[2]*up[2])/z];
+  };
+  const S = sunVec(), A = antiVec(), warm = Math.min(1, Math.max(0, (22 - F.e)/18));
+  // 하늘과 땅
+  const hy = h/2 + f*Math.tan(F.pitch);
+  const sky = ctx.createLinearGradient(0, Math.min(hy, h) - h, 0, Math.max(0, hy));
+  sky.addColorStop(0, '#2b3442'); sky.addColorStop(0.7, `rgb(${70 + 40*warm|0},${78 + 10*warm|0},${92 - 10*warm|0})`); sky.addColorStop(1, `rgb(${120 + 60*warm|0},${118 + 20*warm|0},${112 - 10*warm|0})`);
+  ctx.fillStyle = sky; ctx.fillRect(0, 0, w, Math.max(0, Math.min(h, hy)));
+  if (hy < h){
+    const gr = ctx.createLinearGradient(0, Math.max(0, hy), 0, h);
+    gr.addColorStop(0, `rgb(${74 + 30*warm|0},${86 + 12*warm|0},52)`);
+    gr.addColorStop(1, '#1d2a14');
+    ctx.fillStyle = gr; ctx.fillRect(0, Math.max(0, hy), w, h - Math.max(0, hy));
+  }
+  // 해
+  const sp2 = projDir(S);
+  if (sp2){
+    const g = ctx.createRadialGradient(sp2[0], sp2[1], 0, sp2[0], sp2[1], f*0.5);
+    g.addColorStop(0, 'rgba(255,248,225,1)'); g.addColorStop(0.03, 'rgba(255,240,200,.95)'); g.addColorStop(0.12, 'rgba(255,220,160,.25)'); g.addColorStop(1, 'rgba(255,220,160,0)');
+    ctx.fillStyle = g; ctx.fillRect(0, 0, w, h);
+  }
+  // 바닥 줄 (걸을 때 움직임이 보이게)
+  ctx.strokeStyle = 'rgba(20,30,10,.35)'; ctx.lineWidth = 1;
+  const gx0 = Math.floor(eye[0]/10)*10, gz0 = Math.floor(eye[2]/10)*10;
+  ctx.beginPath();
+  for (let k = -12; k <= 12; k++){
+    for (const [a1, a2] of [[[gx0 + k*10, 0, gz0 - 120], [gx0 + k*10, 0, gz0 + 120]], [[gx0 - 120, 0, gz0 + k*10], [gx0 + 120, 0, gz0 + k*10]]]){
+      // 앞쪽만 잘라 그림
+      let pA = a1, pB = a2;
+      const dz = p => (p[0]-eye[0])*fw[0] + (p[1]-eye[1])*fw[1] + (p[2]-eye[2])*fw[2];
+      const zA = dz(pA), zB = dz(pB);
+      if (zA < 0.5 && zB < 0.5) continue;
+      if (zA < 0.5){ const t = (0.5 - zA)/(zB - zA); pA = [pA[0] + (pB[0]-pA[0])*t, 0, pA[2] + (pB[2]-pA[2])*t]; }
+      if (zB < 0.5){ const t = (0.5 - zB)/(zA - zB); pB = [pB[0] + (pA[0]-pB[0])*t, 0, pB[2] + (pA[2]-pB[2])*t]; }
+      const q1 = proj(pA), q2 = proj(pB); if (!q1 || !q2) continue;
+      ctx.moveTo(q1[0], q1[1]); ctx.lineTo(q2[0], q2[1]);
+    }
+  }
+  ctx.stroke();
+  // 내 그림자
+  const head = [eye[0] + A[0]*EYE_H/A[1]*-1, 0, eye[2] + A[2]*EYE_H/(-A[1])];
+  const sh = [[eye[0]-0.22, 0, eye[2]], [eye[0]+0.22, 0, eye[2]], [head[0]+0.15, 0, head[2]], [head[0]-0.15, 0, head[2]]].map(proj);
+  if (sh.every(Boolean)){
+    ctx.fillStyle = 'rgba(10,14,6,.45)'; ctx.beginPath(); ctx.moveTo(sh[0][0], sh[0][1]); for (const q of sh.slice(1)) ctx.lineTo(q[0], q[1]); ctx.fill();
+    const hq = proj(head); if (hq){ ctx.beginPath(); ctx.ellipse(hq[0], hq[1], Math.max(2, f*0.18/hq[2]), Math.max(1.5, f*0.1/hq[2]), 0, 0, 7); ctx.fill(); }
+  }
+  // 유리구
+  const P = F.pos, N = F.n;
+  if (!fieldBuckets) fieldBuckets = Array.from({length: NB*3}, () => []);
+  for (const b of fieldBuckets) b.length = 0;
+  const outlines = [];
+  let lit = 0;
+  for (let k = 0; k < N; k++){
+    const dx = P[k*3] - eye[0], dy = P[k*3+1] - eye[1], dz = P[k*3+2] - eye[2];
+    const z = dx*fw[0] + dy*fw[1] + dz*fw[2];
+    const dist = Math.sqrt(dx*dx + dy*dy + dz*dz);
+    const cosT = (dx*A[0] + dy*A[1] + dz*A[2]) / dist;
+    const th = Math.acos(Math.max(-1, Math.min(1, cosT))) / DEG;
+    if ((th >= 40 && th <= 42.8) || (th >= 50 && th <= 54)) lit++;
+    if (z < 0.4) continue;
+    const sx = w/2 + f*(dx*rt[0] + dy*rt[1] + dz*rt[2])/z, sy = h/2 - f*(dx*up[0] + dy*up[1] + dz*up[2])/z;
+    if (sx < -10 || sx > w + 10 || sy < -10 || sy > h + 10) continue;
+    const rpx = f*SPH_R/z;
+    if (rpx > 2.2) outlines.push([sx, sy, rpx]);
+    if (th >= SKY_MAX) continue;
+    const j = (th/BIN)|0;
+    const al = dist < 25 ? 2 : dist < 70 ? 1 : 0;
+    fieldBuckets[j*3 + al].push(sx, sy, Math.min(7, Math.max(1.8, rpx*0.55)));
+  }
+  F.lit = lit;
+  // 가까운 구의 유리 테두리
+  ctx.strokeStyle = 'rgba(220,235,245,.14)'; ctx.lineWidth = 1;
+  ctx.fillStyle = 'rgba(150,190,220,.05)';
+  for (const [x, y, r] of outlines){ ctx.beginPath(); ctx.arc(x, y, r, 0, 7); ctx.fill(); ctx.stroke(); }
+  // 반짝임 (빛을 보낸 색) — 겹쳐도 색이 하얗게 날아가지 않도록 덧칠
+  ctx.globalCompositeOperation = 'source-over';
+  const AL = [0.55, 0.8, 1];
+  for (let j = 0; j < NB; j++){
+    const c = BIN_COL[j];
+    for (let al = 0; al < 3; al++){
+      const arr = fieldBuckets[j*3 + al]; if (!arr.length) continue;
+      const alpha = AL[al] * c[3]; if (alpha < 0.02) continue;
+      ctx.fillStyle = `rgba(${c[0]},${c[1]},${c[2]},${alpha})`;
+      for (let q = 0; q < arr.length; q += 3){ const s2 = arr[q+2]; ctx.fillRect(arr[q] - s2/2, arr[q+1] - s2/2, s2, s2); }
+    }
+  }
+  ctx.globalCompositeOperation = 'source-over';
+  // 읽음표
+  const fs = Math.round(Math.max(11.5, Math.min(15, Math.min(W, H) * 0.03)));
+  ctx.font = `${fs}px 'Gowun Batang', serif`;
+  const top = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--sat')) || 0;
+  let y = fs*1.6 + top;
+  const moved = Math.hypot(eye[0], eye[2]);
+  ctx.fillStyle = 'rgba(255,250,240,.95)'; ctx.shadowColor = 'rgba(0,0,0,.6)'; ctx.shadowBlur = 6;
+  ctx.fillText(`해 높이 ${F.e}° · 처음 자리에서 ${moved.toFixed(0)}m`, 14, y); y += fs*1.5;
+  ctx.fillStyle = 'rgba(255,250,240,.8)';
+  ctx.fillText(`무지개 빛을 보내는 구 ${lit.toLocaleString()}개 / ${N.toLocaleString()}개`, 14, y); y += fs*1.5;
+  if (F.e > 42 && F.arr === 'sky'){ ctx.fillStyle = 'rgba(232,200,142,1)'; ctx.fillText('해가 42°보다 높아 무지개가 땅 아래로 내려갔어요', 14, y); }
+  ctx.shadowBlur = 0;
+}
+
+let lastT = performance.now();
+function loop(now){
+  const dt = Math.min(0.05, ((now || performance.now()) - lastT) / 1000); lastT = now || performance.now();
+  if (state.mode === 'field'){
+    const m = FIELD.move, sp = 6;
+    const fx = Math.sin(FIELD.yaw), fz = Math.cos(FIELD.yaw);
+    let vx = 0, vz = 0;
+    if (m.f){ vx += fx; vz += fz; } if (m.b){ vx -= fx; vz -= fz; }
+    if (m.r){ vx += fz; vz -= fx; } if (m.l){ vx -= fz; vz += fx; }
+    if (vx || vz){
+      FIELD.eye[0] = Math.max(-150, Math.min(150, FIELD.eye[0] + vx*sp*dt));
+      FIELD.eye[2] = Math.max(-80, Math.min(160, FIELD.eye[2] + vz*sp*dt));
+      dirty = true;
+    }
+  }
+  if (dirty){ dirty = false; render(); }
+  requestAnimationFrame(loop);
+}
 
 /* ================= 조작 ================= */
 function setI(v){
@@ -533,15 +738,67 @@ function setI(v){
 ang.addEventListener('input', () => setI(+ang.value));
 let drag = false;
 function yToI(py){ const b = (L.cy - py) / L.R; return Math.asin(Math.max(0, Math.min(0.9998, b))) / DEG; }
+let look = null;
 cv.addEventListener('pointerdown', e => {
   drawer.classList.remove('open');
+  if (state.mode === 'field'){ look = { x: e.offsetX, y: e.offsetY }; cv.setPointerCapture(e.pointerId); return; }
   const m = L.main;
   if (e.offsetX > m.x + m.w || e.offsetY > m.y + m.h) return;
   drag = true; cv.setPointerCapture(e.pointerId); setI(yToI(e.offsetY));
 });
-cv.addEventListener('pointermove', e => { if (drag) setI(yToI(e.offsetY)); });
-cv.addEventListener('pointerup', () => drag = false);
-cv.addEventListener('pointercancel', () => drag = false);
+cv.addEventListener('pointermove', e => {
+  if (look){
+    const f = Math.max(W, L.ah) / (2*Math.tan(52*DEG));
+    FIELD.yaw -= (e.offsetX - look.x) / f;
+    FIELD.pitch = Math.max(-50*DEG, Math.min(60*DEG, FIELD.pitch + (e.offsetY - look.y) / f));
+    look = { x: e.offsetX, y: e.offsetY }; dirty = true; return;
+  }
+  if (drag) setI(yToI(e.offsetY));
+});
+cv.addEventListener('pointerup', () => { drag = false; look = null; });
+cv.addEventListener('pointercancel', () => { drag = false; look = null; });
+
+// 모드
+const segMode = document.getElementById('segMode');
+segMode.addEventListener('click', e => {
+  const b = e.target.closest('button'); if (!b) return;
+  segMode.querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b));
+  state.mode = b.dataset.m;
+  const fld = state.mode === 'field';
+  document.getElementById('gFlask').hidden = fld; document.getElementById('gField').hidden = !fld;
+  document.getElementById('dFlask').hidden = fld; document.getElementById('dField').hidden = !fld;
+  document.getElementById('pad').hidden = !fld;
+  drawer.classList.remove('open');
+  if (fld && !FIELD.pos) buildField();
+  layout();
+});
+const sunE = document.getElementById('sunE'), sunV = document.getElementById('sunV');
+sunE.addEventListener('input', () => {
+  FIELD.e = +sunE.value; sunV.textContent = FIELD.e + '°';
+  if (FIELD.arr === 'cone') buildField(); else dirty = true;
+});
+document.getElementById('segArr').addEventListener('click', e => {
+  const b = e.target.closest('button'); if (!b) return;
+  document.querySelectorAll('#segArr button').forEach(x => x.classList.toggle('on', x === b));
+  FIELD.arr = b.dataset.a; FIELD.pitch = (FIELD.arr === 'ground' ? -32 : 6) * DEG; buildField();
+});
+document.getElementById('segN').addEventListener('click', e => {
+  const b = e.target.closest('button'); if (!b) return;
+  document.querySelectorAll('#segN button').forEach(x => x.classList.toggle('on', x === b));
+  FIELD.n = +b.dataset.n; buildField();
+});
+document.getElementById('goHome').addEventListener('click', () => { FIELD.eye = [0, EYE_H, 0]; FIELD.yaw = 0; FIELD.pitch = (FIELD.arr === 'ground' ? -32 : 6) * DEG; dirty = true; drawer.classList.remove('open'); });
+document.getElementById('goFull2').addEventListener('click', () => document.getElementById('goFull').click());
+// 걷기: 버튼을 누르고 있는 동안, 키보드 화살표·WASD
+document.querySelectorAll('#pad button').forEach(btn => {
+  const d = btn.dataset.d;
+  btn.addEventListener('pointerdown', e => { e.preventDefault(); FIELD.move[d] = true; btn.classList.add('on'); btn.setPointerCapture(e.pointerId); });
+  const off = () => { FIELD.move[d] = false; btn.classList.remove('on'); };
+  btn.addEventListener('pointerup', off); btn.addEventListener('pointercancel', off); btn.addEventListener('lostpointercapture', off);
+});
+const KEYS = { ArrowUp: 'f', KeyW: 'f', ArrowDown: 'b', KeyS: 'b', ArrowLeft: 'l', KeyA: 'l', ArrowRight: 'r', KeyD: 'r' };
+window.addEventListener('keydown', e => { if (state.mode === 'field' && KEYS[e.code]){ FIELD.move[KEYS[e.code]] = true; e.preventDefault(); } });
+window.addEventListener('keyup', e => { if (KEYS[e.code]) FIELD.move[KEYS[e.code]] = false; });
 
 document.getElementById('segK').addEventListener('click', e => {
   const b = e.target.closest('button'); if (!b) return;
@@ -562,7 +819,7 @@ document.getElementById('goMin').addEventListener('click', () => {
   requestAnimationFrame(step);
 });
 const goFull = document.getElementById('goFull');
-if (!(document.documentElement.requestFullscreen || document.documentElement.webkitRequestFullscreen)) goFull.style.display = 'none';
+if (!(document.documentElement.requestFullscreen || document.documentElement.webkitRequestFullscreen)){ goFull.style.display = 'none'; document.getElementById('goFull2').style.display = 'none'; }
 goFull.addEventListener('click', async () => {
   const d = document, el = d.documentElement;
   try {
