@@ -45,7 +45,8 @@
   .sl{flex:1 1 260px;display:flex;align-items:center;gap:10px;min-width:200px}
   .sl label{white-space:nowrap;color:var(--dim)}
   .sl b{font-weight:400;color:var(--ink);font-variant-numeric:tabular-nums;min-width:3.4em;text-align:right}
-  input[type=range]{flex:1;-webkit-appearance:none;appearance:none;height:28px;background:transparent;margin:0}
+  .sl b,.sl label{flex:none}
+  input[type=range]{flex:1;min-width:60px;-webkit-appearance:none;appearance:none;height:28px;background:transparent;margin:0}
   input[type=range]::-webkit-slider-runnable-track{height:4px;border-radius:4px;background:linear-gradient(90deg,#3a3a46,#c9b48a)}
   input[type=range]::-moz-range-track{height:4px;border-radius:4px;background:linear-gradient(90deg,#3a3a46,#c9b48a)}
   input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;height:22px;border-radius:50%;margin-top:-9px;background:#fff6e2;border:2px solid #c9a86a;box-shadow:0 0 10px rgba(255,230,180,.6)}
@@ -93,7 +94,9 @@
   </div>
   <div class="grp" id="gField" hidden>
     <div class="sl"><label for="sunE">해 높이</label><input id="sunE" type="range" min="3" max="50" step="0.5" value="24"><b id="sunV">24°</b></div>
+    <div class="sl" style="flex-basis:200px"><label for="tMin">시간 흐름</label><input id="tMin" type="range" min="-30" max="30" step="1" value="0"><b id="tV">0분</b></div>
     <div class="seg" id="segArr"><button data-a="sky" class="on">하늘 가득</button><button data-a="ground">풀밭 위</button><button data-a="cone">원뿔 틀</button><button data-a="tube">유리관 아치</button></div>
+    <button class="tg" id="tgPlan">설치도</button>
   </div>
   <button class="ib" id="btnInfo" aria-label="설명과 설정">ⓘ</button>
 </div>
@@ -557,7 +560,8 @@ function drawSkyOverlay(){
 /* ================= 들판 무지개 ================= */
 // 유리구 하나가 내 눈에 보내는 빛의 색 — 해의 반대쪽에서 잰 각(0.1° 칸)마다 미리 계산
 const SPH_R = 0.15, EYE_H = 1.6;
-const FIELD = { e: 24, arr: 'sky', n: 30000, pos: null, eye: [0, EYE_H, 0], yaw: 0, pitch: 6*DEG, move: {}, lit: 0 };
+const FIELD = { e: 24, tmin: 0, arr: 'sky', n: 30000, pos: null, eye: [0, EYE_H, 0], yaw: 0, pitch: 6*DEG, move: {}, lit: 0,
+  view: 'walk', dYaw: 0.75, dPitch: -24*DEG, dDist: 190 };
 const BIN_COL = (() => {
   const a = skyRGB[2], out = [];
   for (let j = 0; j < NB; j++){
@@ -570,12 +574,24 @@ const BIN_COL = (() => {
   }
   return out;
 })();
-function sunVec(){ const e = FIELD.e*DEG; return [0, Math.sin(e), -Math.cos(e)]; }     // 해는 뒤쪽(-z) 하늘에
+// 해: 설계 시각에는 관람자 바로 뒤(-z) 하늘. 시간이 흐르면 서울(북위 37.5°) 춘·추분 오후의 해 길을 따라 움직임
+const LAT = 37.5*DEG;
+function sunNow(){
+  const e0 = FIELD.e*DEG, m = FIELD.tmin || 0;
+  if (!m) return { e: e0, daz: 0 };
+  const H0 = Math.acos(Math.min(1, Math.sin(e0)/Math.cos(LAT)));
+  const H = H0 + m*0.25*DEG;
+  const e = Math.asin(Math.cos(LAT)*Math.cos(H));
+  const az = h => Math.atan2(Math.sin(h), Math.cos(h)*Math.sin(LAT));
+  return { e, daz: az(H) - az(H0) };
+}
+function sunVec(){ const { e, daz } = sunNow(); return [-Math.sin(daz)*Math.cos(e), Math.sin(e), -Math.cos(daz)*Math.cos(e)]; }
 function antiVec(){ const s = sunVec(); return [-s[0], -s[1], -s[2]]; }
+function antiDesign(){ const e = FIELD.e*DEG; return [0, -Math.sin(e), Math.cos(e)]; }
 function mulberry(a){ return () => { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
 function buildField(){
   const N = FIELD.n, P = new Float32Array(N*3), rnd = mulberry(7 + N);
-  const A = antiVec(), e = FIELD.e*DEG, B2 = [0, Math.cos(e), Math.sin(e)];
+  const A = antiDesign(), e = FIELD.e*DEG, B2 = [0, Math.cos(e), Math.sin(e)];
   for (let k = 0; k < N; k++){
     let x, y, z;
     if (FIELD.arr === 'sky'){ x = -170 + 340*rnd(); y = 1 + 115*rnd(); z = 25 + 150*rnd(); }
@@ -599,7 +615,7 @@ function buildField(){
 // 유리관 아치: 처음 자리의 눈에서 40.2°~42.5°인 원을 따라 휜 관 12줄 (90m 앞, 지름 30cm)
 const TUBE_D = 90, TUBE_N = 12;
 function buildTubes(){
-  const A = antiVec(), e = FIELD.e*DEG, B1 = [1, 0, 0], B2 = [0, Math.cos(e), Math.sin(e)];
+  const A = antiDesign(), e = FIELD.e*DEG, B1 = [1, 0, 0], B2 = [0, Math.cos(e), Math.sin(e)];
   const tubes = [];
   for (let k = 0; k < TUBE_N; k++){
     const th = (40.2 + k*0.21) * DEG, ct = Math.cos(th), st = Math.sin(th);
@@ -615,7 +631,7 @@ function buildTubes(){
   }
   return tubes;
 }
-function drawTubes(proj, f, eye){
+function drawTubes(proj, f, eye, drone){
   const A = antiVec(), TOL = 0.006;   // 해의 겉보기 반지름 + 관의 작은 흠
   let lit = 0;
   ctx.lineCap = 'round';
@@ -632,7 +648,8 @@ function drawTubes(proj, f, eye){
         ctx.strokeStyle = 'rgba(200,225,240,.16)'; ctx.lineWidth = w;
         ctx.beginPath(); ctx.moveTo(prev[0], prev[1]); ctx.lineTo(cur[0], cur[1]); ctx.stroke();
         // 관 길이 방향과 수직인 면 안에서만 빛이 나옴
-        const ax = u[0]*a[0] + u[1]*a[1] + u[2]*a[2];
+        // 빛은 관 길이 방향 성분을 그대로 지닌 채 나옴: (눈 쪽 방향)·a = −(햇빛 방향)·a 일 때만 보임
+        const ax = drone ? 0 : (u[0]*a[0] + u[1]*a[1] + u[2]*a[2]) + (A[0]*a[0] + A[1]*a[1] + A[2]*a[2]);
         const fall = 1 - (ax/TOL)*(ax/TOL);
         if (fall > 0){
           const aa = A[0]*a[0] + A[1]*a[1] + A[2]*a[2];
@@ -656,14 +673,140 @@ function drawTubes(proj, f, eye){
   }
   return lit;
 }
+function droneTarget(){
+  const A = antiDesign();
+  if (FIELD.arr === 'tube' || FIELD.arr === 'cone'){ const d = FIELD.arr === 'tube' ? TUBE_D : 90; return [0, 10, A[2]*d*0.55]; }
+  if (FIELD.arr === 'ground') return [0, 0, 22];
+  return [0, 20, 80];
+}
+// 설치 치수 계산
+function planNumbers(){
+  const e = FIELD.e*DEG, A = antiDesign(), B2 = [0, Math.cos(e), Math.sin(e)];
+  const D = FIELD.arr === 'tube' ? TUBE_D : 90;
+  const out = { D };
+  const pt = (thDeg, ph) => { const th = thDeg*DEG, ct = Math.cos(th), st = Math.sin(th), c = Math.cos(ph), sn = Math.sin(ph);
+    return [st*c*D, EYE_H + (A[1]*ct + B2[1]*st*sn)*D, (A[2]*ct + B2[2]*st*sn)*D]; };
+  out.top = pt(42.5, Math.PI/2);
+  // 땅에 닿는 다리: y=0.2가 되는 각
+  let lo = 0, hi = Math.PI/2;
+  for (let it = 0; it < 40; it++){ const m = (lo + hi)/2; if (pt(42.5, m)[1] < 0.2) lo = m; else hi = m; }
+  out.leg = pt(42.5, hi); out.legPh = hi;
+  out.span = 2*out.leg[0];
+  out.arcLen = 0; let prev = null;
+  for (let ph = hi; ph <= Math.PI - hi + 1e-9; ph += 0.002){ const q = pt(41.35, ph); if (prev) out.arcLen += Math.hypot(q[0]-prev[0], q[1]-prev[1], q[2]-prev[2]); prev = q; }
+  out.tubeTotal = out.arcLen * TUBE_N;
+  out.water = Math.PI*0.15*0.15*out.tubeTotal;   // ㎥ = 톤
+  out.gap = D * 0.21*DEG;
+  out.lean = FIELD.e;
+  return out;
+}
+function drawPlan(proj, f, eye, A, S){
+  const N0 = planNumbers();
+  const E0 = [0, EYE_H, 0];
+  ctx.save();
+  // 해에서 오는 빛 (관람자 머리 위로 지나감)
+  const sd = sunVec(), from = [E0[0] + sd[0]*70, E0[1] + sd[1]*70, E0[2] + sd[2]*70];
+  const p1 = proj(from), p2 = proj(E0);
+  if (p1 && p2){
+    ctx.strokeStyle = 'rgba(255,230,160,.85)'; ctx.lineWidth = 2; ctx.setLineDash([]);
+    ctx.beginPath(); ctx.moveTo(p1[0], p1[1]); ctx.lineTo(p2[0], p2[1]); ctx.stroke();
+    ctx.fillStyle = 'rgba(255,236,170,1)'; ctx.beginPath(); ctx.arc(p1[0], p1[1], 7, 0, 7); ctx.fill();
+    label(p1[0] + 10, p1[1], '해', 'rgba(255,236,170,1)');
+  }
+  // 받침 구조
+  if (FIELD.arr === 'tube' && FIELD.tubes){
+    const outer = FIELD.tubes[FIELD.tubes.length - 1], inner = FIELD.tubes[0];
+    const step = Math.max(1, Math.round(7.5 / (TUBE_D*Math.sin(42.5*DEG)*0.4*DEG)));
+    ctx.strokeStyle = 'rgba(40,36,30,.9)';
+    for (let q = 0; q < outer.pts.length; q += step){
+      const P = outer.pts[q], G = [P[0], 0, P[2]];
+      const a = proj(P), b = proj(G);
+      if (!a || !b) continue;
+      ctx.lineWidth = Math.max(1, f*0.25/b[2]);
+      ctx.beginPath(); ctx.moveTo(a[0], a[1]); ctx.lineTo(b[0], b[1]); ctx.stroke();
+      const qi = Math.min(inner.pts.length - 1, Math.round(q * inner.pts.length / outer.pts.length));
+      const ai = proj(inner.pts[qi]); if (ai){ ctx.lineWidth = Math.max(1, f*0.12/a[2]); ctx.beginPath(); ctx.moveTo(a[0], a[1]); ctx.lineTo(ai[0], ai[1]); ctx.stroke(); }
+      ctx.fillStyle = 'rgba(150,150,140,.7)'; const r = Math.max(1.5, f*0.6/b[2]); ctx.fillRect(b[0] - r, b[1] - r/2, 2*r, r);
+    }
+  }
+  if (FIELD.arr === 'cone' && FIELD.pos){
+    const P = FIELD.pos; ctx.strokeStyle = 'rgba(40,36,30,.35)'; ctx.lineWidth = 1; ctx.beginPath();
+    for (let k = 0; k < P.length/3; k += 6){ const a = proj([P[k*3], P[k*3+1], P[k*3+2]]), b = proj([P[k*3], 0, P[k*3+2]]); if (a && b){ ctx.moveTo(a[0], a[1]); ctx.lineTo(b[0], b[1]); } }
+    ctx.stroke();
+  }
+  // 관람 자리
+  const ring = []; for (let k = 0; k <= 24; k++){ const t = k/24*Math.PI*2; ring.push(proj([Math.cos(t)*2.5, 0, Math.sin(t)*2.5])); }
+  if (ring.every(Boolean)){ ctx.fillStyle = 'rgba(232,200,142,.35)'; ctx.strokeStyle = 'rgba(232,200,142,1)'; ctx.lineWidth = 1.5; ctx.beginPath(); ring.forEach((q, i) => i ? ctx.lineTo(q[0], q[1]) : ctx.moveTo(q[0], q[1])); ctx.fill(); ctx.stroke(); }
+  const pf = proj([0, 0, 0]), ph = proj(E0);
+  if (pf && ph){ ctx.strokeStyle = '#fff4dc'; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(pf[0], pf[1]); ctx.lineTo(ph[0], ph[1]); ctx.stroke();
+    ctx.fillStyle = '#fff4dc'; ctx.beginPath(); ctx.arc(ph[0], ph[1], 4, 0, 7); ctx.fill();
+    label(ph[0] + 10, ph[1] - 8, '관람 자리 · 눈높이 1.6m', 'rgba(255,240,210,1)'); }
+  // 치수선
+  if (FIELD.arr === 'tube' || FIELD.arr === 'cone'){
+    const T = N0.top, G = [T[0], 0, T[2]], Lr = [N0.leg[0], 0, N0.leg[2]], Ll = [-N0.leg[0], 0, N0.leg[2]];
+    dim(proj, [0, 0, 0], G, `${Math.round(Math.hypot(G[0], G[2]))}m`);
+    dim(proj, G, T, `높이 ${Math.round(T[1])}m`);
+    dim(proj, Ll, Lr, `너비 ${Math.round(N0.span)}m`);
+  }
+  ctx.restore();
+}
+function label(x, y, t, col){
+  const fs = Math.round(Math.max(11, Math.min(14, Math.min(W, H) * 0.028)));
+  ctx.font = `${fs}px 'Gowun Batang', serif`; ctx.fillStyle = col || 'rgba(255,250,240,.95)';
+  ctx.shadowColor = 'rgba(0,0,0,.7)'; ctx.shadowBlur = 5; ctx.fillText(t, x, y); ctx.shadowBlur = 0;
+}
+function dim(proj, a, b, t){
+  const p = proj(a), q = proj(b); if (!p || !q) return;
+  ctx.strokeStyle = 'rgba(255,255,255,.85)'; ctx.lineWidth = 1.2; ctx.setLineDash([]);
+  ctx.beginPath(); ctx.moveTo(p[0], p[1]); ctx.lineTo(q[0], q[1]); ctx.stroke();
+  for (const z of [p, q]){ ctx.beginPath(); ctx.arc(z[0], z[1], 2.5, 0, 7); ctx.fillStyle = '#fff'; ctx.fill(); }
+  label((p[0] + q[0])/2 + 6, (p[1] + q[1])/2 - 6, t);
+}
+function drawPlanText(fs, y){
+  const N0 = planNumbers(), x = 14;
+  const L1 = [];
+  if (FIELD.arr === 'tube'){
+    L1.push(['설치도 — 유리관 아치', 1]);
+    L1.push([`해 높이 ${FIELD.e}°, 관람자 바로 뒤에서 비출 때`]);
+    L1.push([`물 채운 유리관(지름 30cm) ${TUBE_N}줄, 관 사이 ${Math.round(N0.gap*100)}cm`]);
+    L1.push([`관 한 줄 ${Math.round(N0.arcLen)}m · 모두 ${(N0.tubeTotal/1000).toFixed(1)}km · 물 ${Math.round(N0.water)}톤`]);
+    L1.push([`아치 면은 수직에서 ${N0.lean}° 뒤로 눕혀 세움`]);
+    L1.push([`해는 1분에 약 0.25°씩 움직여요`]);
+    L1.push([`1분만 지나도 아치 한쪽이 꺼져요 — 정해진 순간을 위한 작품`]);
+  } else if (FIELD.arr === 'cone'){
+    L1.push(['설치도 — 원뿔 틀', 1]);
+    L1.push([`해 높이 ${FIELD.e}°, 관람자 바로 뒤에서 비출 때`]);
+    L1.push([`지름 30cm 유리구 ${FIELD.n.toLocaleString()}개, 하나마다 기둥 하나`]);
+    L1.push([`관람자에게서 55~125m, 원뿔 모양으로 배치`]);
+    L1.push([`해가 움직이면 10분쯤 뒤 무지개 띠가 틀 밖으로 밀려나요`]);
+  } else if (FIELD.arr === 'ground'){
+    L1.push(['설치도 — 풀밭 위', 1]);
+    L1.push([`유리구 ${FIELD.n.toLocaleString()}개를 땅에 촘촘히 (1㎡에 7~8개)`]);
+    L1.push([`어느 시각, 어느 자리에서든 발치에 이슬 무지개`]);
+  } else {
+    L1.push(['설치도 — 하늘 가득', 1]);
+    L1.push([`유리구 ${FIELD.n.toLocaleString()}개, 높이 115m까지 허공에`]);
+    L1.push([`실제로는 높은 탑 사이에 줄을 걸어 매달아야 해요`]);
+    L1.push([`어느 시각, 어느 자리에서든 무지개가 생겨요`]);
+  }
+  L1.push(['끌어서 돌려 보기 · ▲▼ 가까이/멀리 · ◀▶ 돌기']);
+  for (const [t, b] of L1){
+    ctx.fillStyle = b ? 'rgba(232,200,142,1)' : 'rgba(255,250,240,.88)';
+    ctx.fillText(t, x, y); y += fs*1.45;
+  }
+  return y;
+}
 let fieldBuckets = null;
 function renderField(){
-  const w = W, h = L.ah, F = FIELD, eye = F.eye;
-  const f = Math.max(w, h) / (2*Math.tan(52*DEG));
-  const cy_ = Math.cos(F.yaw), sy_ = Math.sin(F.yaw), cp = Math.cos(F.pitch), sp = Math.sin(F.pitch);
+  const w = W, h = L.ah, F = FIELD, eye = F.eye, drone = F.view === 'drone';
+  const f = Math.max(w, h) / (2*Math.tan((drone ? 40 : 52)*DEG));
+  const camYaw = drone ? F.dYaw : F.yaw, camPitch = drone ? F.dPitch : F.pitch;
+  const cy_ = Math.cos(camYaw), sy_ = Math.sin(camYaw), cp = Math.cos(camPitch), sp = Math.sin(camPitch);
   const fw = [sy_*cp, sp, cy_*cp], rt = [cy_, 0, -sy_], up = [-sy_*sp, cp, -cy_*sp];
+  const DT = droneTarget();
+  const cam = drone ? [DT[0] - fw[0]*F.dDist, Math.max(2, DT[1] - fw[1]*F.dDist), DT[2] - fw[2]*F.dDist] : eye;
   const proj = p => {
-    const d = [p[0]-eye[0], p[1]-eye[1], p[2]-eye[2]];
+    const d = [p[0]-cam[0], p[1]-cam[1], p[2]-cam[2]];
     const z = d[0]*fw[0] + d[1]*fw[1] + d[2]*fw[2];
     if (z < 0.3) return null;
     return [w/2 + f*(d[0]*rt[0] + d[1]*rt[1] + d[2]*rt[2])/z, h/2 - f*(d[0]*up[0] + d[1]*up[1] + d[2]*up[2])/z, z];
@@ -672,9 +815,9 @@ function renderField(){
     const z = d[0]*fw[0] + d[1]*fw[1] + d[2]*fw[2]; if (z < 0.02) return null;
     return [w/2 + f*(d[0]*rt[0] + d[1]*rt[1] + d[2]*rt[2])/z, h/2 - f*(d[0]*up[0] + d[1]*up[1] + d[2]*up[2])/z];
   };
-  const S = sunVec(), A = antiVec(), warm = Math.min(1, Math.max(0, (22 - F.e)/18));
+  const S = sunVec(), A = antiVec(), warm = Math.min(1, Math.max(0, (22 - F.e)/18)), sunUp = S[1] > 0.005;
   // 하늘과 땅
-  const hy = h/2 + f*Math.tan(F.pitch);
+  const hy = h/2 + f*Math.tan(camPitch);
   const sky = ctx.createLinearGradient(0, Math.min(hy, h) - h, 0, Math.max(0, hy));
   sky.addColorStop(0, '#2b3442'); sky.addColorStop(0.7, `rgb(${70 + 40*warm|0},${78 + 10*warm|0},${92 - 10*warm|0})`); sky.addColorStop(1, `rgb(${120 + 60*warm|0},${118 + 20*warm|0},${112 - 10*warm|0})`);
   ctx.fillStyle = sky; ctx.fillRect(0, 0, w, Math.max(0, Math.min(h, hy)));
@@ -693,13 +836,13 @@ function renderField(){
   }
   // 바닥 줄 (걸을 때 움직임이 보이게)
   ctx.strokeStyle = 'rgba(20,30,10,.35)'; ctx.lineWidth = 1;
-  const gx0 = Math.floor(eye[0]/10)*10, gz0 = Math.floor(eye[2]/10)*10;
+  const gx0 = Math.floor(cam[0]/10)*10, gz0 = Math.floor(cam[2]/10)*10, GN = drone ? 25 : 12;
   ctx.beginPath();
-  for (let k = -12; k <= 12; k++){
-    for (const [a1, a2] of [[[gx0 + k*10, 0, gz0 - 120], [gx0 + k*10, 0, gz0 + 120]], [[gx0 - 120, 0, gz0 + k*10], [gx0 + 120, 0, gz0 + k*10]]]){
+  for (let k = -GN; k <= GN; k++){
+    for (const [a1, a2] of [[[gx0 + k*10, 0, gz0 - GN*10], [gx0 + k*10, 0, gz0 + GN*10]], [[gx0 - GN*10, 0, gz0 + k*10], [gx0 + GN*10, 0, gz0 + k*10]]]){
       // 앞쪽만 잘라 그림
       let pA = a1, pB = a2;
-      const dz = p => (p[0]-eye[0])*fw[0] + (p[1]-eye[1])*fw[1] + (p[2]-eye[2])*fw[2];
+      const dz = p => (p[0]-cam[0])*fw[0] + (p[1]-cam[1])*fw[1] + (p[2]-cam[2])*fw[2];
       const zA = dz(pA), zB = dz(pB);
       if (zA < 0.5 && zB < 0.5) continue;
       if (zA < 0.5){ const t = (0.5 - zA)/(zB - zA); pA = [pA[0] + (pB[0]-pA[0])*t, 0, pA[2] + (pB[2]-pA[2])*t]; }
@@ -724,19 +867,20 @@ function renderField(){
   let lit = 0;
   for (let k = 0; k < N; k++){
     const dx = P[k*3] - eye[0], dy = P[k*3+1] - eye[1], dz = P[k*3+2] - eye[2];
-    const z = dx*fw[0] + dy*fw[1] + dz*fw[2];
+    const cx_ = P[k*3] - cam[0], cy2 = P[k*3+1] - cam[1], cz_ = P[k*3+2] - cam[2];
+    const z = cx_*fw[0] + cy2*fw[1] + cz_*fw[2];
     const dist = Math.sqrt(dx*dx + dy*dy + dz*dz);
     const cosT = (dx*A[0] + dy*A[1] + dz*A[2]) / dist;
     const th = Math.acos(Math.max(-1, Math.min(1, cosT))) / DEG;
     if ((th >= 40 && th <= 42.8) || (th >= 50 && th <= 54)) lit++;
     if (z < 0.4) continue;
-    const sx = w/2 + f*(dx*rt[0] + dy*rt[1] + dz*rt[2])/z, sy = h/2 - f*(dx*up[0] + dy*up[1] + dz*up[2])/z;
+    const sx = w/2 + f*(cx_*rt[0] + cy2*rt[1] + cz_*rt[2])/z, sy = h/2 - f*(cx_*up[0] + cy2*up[1] + cz_*up[2])/z;
     if (sx < -10 || sx > w + 10 || sy < -10 || sy > h + 10) continue;
     const rpx = f*SPH_R/z;
     if (rpx > 2.2) outlines.push([sx, sy, rpx]);
-    if (th >= SKY_MAX) continue;
+    if (th >= SKY_MAX || !sunUp) continue;
     const j = (th/BIN)|0;
-    const al = dist < 25 ? 2 : dist < 70 ? 1 : 0;
+    const al = drone ? 2 : dist < 25 ? 2 : dist < 70 ? 1 : 0;
     fieldBuckets[j*3 + al].push(sx, sy, Math.min(7, Math.max(1.8, rpx*0.55)));
   }
   F.lit = lit;
@@ -757,7 +901,8 @@ function renderField(){
     }
   }
   ctx.globalCompositeOperation = 'source-over';
-  if (F.tubes) F.lit = drawTubes(proj, f, eye);
+  if (F.tubes) F.lit = drawTubes(proj, f, eye, drone);
+  if (drone) drawPlan(proj, f, eye, A, S);
   // 읽음표
   const fs = Math.round(Math.max(11.5, Math.min(15, Math.min(W, H) * 0.03)));
   ctx.font = `${fs}px 'Gowun Batang', serif`;
@@ -765,7 +910,10 @@ function renderField(){
   let y = fs*1.6 + top;
   const moved = Math.hypot(eye[0], eye[2]);
   ctx.fillStyle = 'rgba(255,250,240,.95)'; ctx.shadowColor = 'rgba(0,0,0,.6)'; ctx.shadowBlur = 6;
-  ctx.fillText(`해 높이 ${F.e}° · 처음 자리에서 ${moved.toFixed(0)}m`, 14, y); y += fs*1.5;
+  const sn = sunNow();
+  const tlab = F.tmin ? ` · 설계 시각 ${F.tmin > 0 ? '+' : ''}${F.tmin}분 (해 높이 ${(sn.e/DEG).toFixed(1)}°)` : '';
+  if (drone){ y = drawPlanText(fs, y); ctx.shadowBlur = 0; return; }
+  ctx.fillText(`해 높이 ${F.e}°${tlab} · 처음 자리에서 ${moved.toFixed(0)}m`, 14, y); y += fs*1.5;
   ctx.fillStyle = 'rgba(255,250,240,.8)';
   if (F.tubes) ctx.fillText(`유리관 ${TUBE_N}줄 · 지름 30cm · ${TUBE_D}m 앞 · 빛나는 마디 ${F.lit.toLocaleString()}개`, 14, y);
   else ctx.fillText(`무지개 빛을 보내는 구 ${lit.toLocaleString()}개 / ${N.toLocaleString()}개`, 14, y);
@@ -777,7 +925,15 @@ function renderField(){
 let lastT = performance.now();
 function loop(now){
   const dt = Math.min(0.05, ((now || performance.now()) - lastT) / 1000); lastT = now || performance.now();
-  if (state.mode === 'field'){
+  if (state.mode === 'field' && FIELD.view === 'drone'){
+    const m = FIELD.move;
+    if (m.f || m.b || m.l || m.r){
+      if (m.f) FIELD.dDist = Math.max(30, FIELD.dDist * (1 - 0.9*dt));
+      if (m.b) FIELD.dDist = Math.min(500, FIELD.dDist * (1 + 0.9*dt));
+      if (m.l) FIELD.dYaw += 0.8*dt; if (m.r) FIELD.dYaw -= 0.8*dt;
+      dirty = true;
+    }
+  } else if (state.mode === 'field'){
     const m = FIELD.move, sp = 6;
     const fx = Math.sin(FIELD.yaw), fz = Math.cos(FIELD.yaw);
     let vx = 0, vz = 0;
@@ -811,6 +967,11 @@ cv.addEventListener('pointerdown', e => {
   drag = true; cv.setPointerCapture(e.pointerId); setI(yToI(e.offsetY));
 });
 cv.addEventListener('pointermove', e => {
+  if (look && FIELD.view === 'drone'){
+    FIELD.dYaw += (e.offsetX - look.x) * 0.006;
+    FIELD.dPitch = Math.max(-85*DEG, Math.min(-3*DEG, FIELD.dPitch - (e.offsetY - look.y) * 0.004));
+    look = { x: e.offsetX, y: e.offsetY }; dirty = true; return;
+  }
   if (look){
     const f = Math.max(W, L.ah) / (2*Math.tan(52*DEG));
     FIELD.yaw -= (e.offsetX - look.x) / f;
@@ -820,6 +981,7 @@ cv.addEventListener('pointermove', e => {
   if (drag) setI(yToI(e.offsetY));
 });
 cv.addEventListener('pointerup', () => { drag = false; look = null; });
+cv.addEventListener('wheel', e => { if (state.mode === 'field' && FIELD.view === 'drone'){ e.preventDefault(); FIELD.dDist = Math.max(30, Math.min(500, FIELD.dDist * Math.exp(e.deltaY*0.001))); dirty = true; } }, { passive: false });
 cv.addEventListener('pointercancel', () => { drag = false; look = null; });
 
 // 모드
@@ -846,6 +1008,10 @@ document.getElementById('segArr').addEventListener('click', e => {
   document.querySelectorAll('#segArr button').forEach(x => x.classList.toggle('on', x === b));
   FIELD.arr = b.dataset.a; FIELD.pitch = (FIELD.arr === 'ground' ? -32 : 6) * DEG; buildField();
 });
+const tMin = document.getElementById('tMin'), tV = document.getElementById('tV');
+tMin.addEventListener('input', () => { FIELD.tmin = +tMin.value; tV.textContent = (FIELD.tmin > 0 ? '+' : '') + FIELD.tmin + '분'; dirty = true; });
+const tgPlan = document.getElementById('tgPlan');
+tgPlan.addEventListener('click', () => { FIELD.view = FIELD.view === 'drone' ? 'walk' : 'drone'; tgPlan.classList.toggle('on', FIELD.view === 'drone'); dirty = true; });
 document.getElementById('segN').addEventListener('click', e => {
   const b = e.target.closest('button'); if (!b) return;
   document.querySelectorAll('#segN button').forEach(x => x.classList.toggle('on', x === b));
