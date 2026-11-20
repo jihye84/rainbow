@@ -1,0 +1,583 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<title>빗방울 속 무지개 — 디트리히와 알파리시의 실험</title>
+<meta name="description" content="물을 채운 둥근 유리병에 햇빛을 비춰 무지개의 비밀을 밝힌 14세기의 실험을 직접 해 보세요.">
+<meta name="theme-color" content="#07080c">
+<script>
+/* 인앱 브라우저(카카오톡·페이스북·인스타그램·네이버·라인 등)에서 열면 기본 브라우저로 */
+(function(){
+  var ua = navigator.userAgent || '', url = location.href;
+  var isAndroid = /Android/i.test(ua);
+  var isIOS = /iPhone|iPad|iPod/i.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  var inApp = /KAKAOTALK|FBAN|FBAV|FB_IAB|FBIOS|Instagram|NAVER\(inapp|NAVER|Line\/|DaumApps|everytimeApp|BAND\/|Twitter|Threads|; wv\)/i.test(ua);
+  if (!inApp) return;
+  if (/KAKAOTALK/i.test(ua)) { location.href = 'kakaotalk://web/openExternal?url=' + encodeURIComponent(url); return; }
+  if (/Line\//i.test(ua)) { location.href = url + (url.indexOf('?') < 0 ? '?' : '&') + 'openExternalBrowser=1'; return; }
+  if (isAndroid) { location.href = 'intent://' + url.replace(/^https?:\/\//, '') + '#Intent;scheme=https;package=com.android.chrome;S.browser_fallback_url=' + encodeURIComponent(url) + ';end'; return; }
+  if (isIOS) { window.__IOS_INAPP__ = true; try { location.href = 'x-safari-' + url; } catch (e) {} }
+})();
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#f2ead9; --dim:rgba(242,234,217,.6); --line:rgba(242,234,217,.15); --gold:#e8c88e;
+    --panel:rgba(20,18,16,.72);
+    --sat:env(safe-area-inset-top,0px); --sab:env(safe-area-inset-bottom,0px);
+    --sal:env(safe-area-inset-left,0px); --sar:env(safe-area-inset-right,0px);
+    --fs:clamp(11px, min(2vh, 3.3vw), 15px);
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#07080c;color:var(--ink);
+    font-family:'Gowun Batang','Nanum Myeongjo','AppleMyungjo',serif;overscroll-behavior:none;
+    -webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent}
+  body{position:fixed;inset:0;height:100dvh}
+  button,input{font-family:inherit;color:inherit}
+  #c{position:fixed;left:0;top:0;display:block;touch-action:none}
+
+  #bar{position:fixed;left:0;right:0;bottom:0;padding:8px calc(12px + var(--sar)) calc(8px + var(--sab)) calc(12px + var(--sal));
+    display:flex;flex-wrap:wrap;align-items:center;gap:8px 14px;font-size:var(--fs);
+    background:linear-gradient(to top, rgba(7,8,12,.96), rgba(7,8,12,.88));border-top:1px solid var(--line)}
+  .sl{flex:1 1 260px;display:flex;align-items:center;gap:10px;min-width:200px}
+  .sl label{white-space:nowrap;color:var(--dim)}
+  .sl b{font-weight:400;color:var(--ink);font-variant-numeric:tabular-nums;min-width:3.4em;text-align:right}
+  input[type=range]{flex:1;-webkit-appearance:none;appearance:none;height:28px;background:transparent;margin:0}
+  input[type=range]::-webkit-slider-runnable-track{height:4px;border-radius:4px;background:linear-gradient(90deg,#3a3a46,#c9b48a)}
+  input[type=range]::-moz-range-track{height:4px;border-radius:4px;background:linear-gradient(90deg,#3a3a46,#c9b48a)}
+  input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;height:22px;border-radius:50%;margin-top:-9px;background:#fff6e2;border:2px solid #c9a86a;box-shadow:0 0 10px rgba(255,230,180,.6)}
+  input[type=range]::-moz-range-thumb{width:20px;height:20px;border-radius:50%;background:#fff6e2;border:2px solid #c9a86a}
+  .seg{display:flex;gap:4px}
+  .seg button,.tg,.ib{background:rgba(255,255,255,.05);border:1px solid var(--line);border-radius:9px;padding:.45em .8em;font-size:1em;cursor:pointer;white-space:nowrap}
+  .seg button.on,.tg.on{background:rgba(232,200,142,.2);border-color:rgba(232,200,142,.65);color:#fff}
+  .ib{padding:.45em .7em}
+
+  #drawer{position:fixed;z-index:10;right:calc(12px + var(--sar));bottom:calc(var(--barh, 60px) + 10px);
+    width:min(400px, calc(100vw - 24px));max-height:calc(100dvh - var(--barh, 60px) - 24px - var(--sat));
+    background:rgba(16,15,14,.94);border:1px solid var(--line);border-radius:16px;padding:clamp(10px,2vh,18px) 18px;
+    font-size:var(--fs);line-height:1.62;display:flex;flex-direction:column;gap:clamp(6px,1.3vh,12px);
+    opacity:0;transform:translateY(10px);pointer-events:none;transition:.25s;backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px)}
+  #drawer.open{opacity:1;transform:none;pointer-events:auto}
+  #drawer h2{margin:0;font-size:1.25em;font-weight:400;color:var(--gold)}
+  #drawer p{margin:0;color:rgba(242,234,217,.88);word-break:keep-all}
+  #drawer .row{display:flex;flex-wrap:wrap;gap:6px}
+  #drawer .lab{color:var(--dim);font-size:.9em}
+  @media (max-height:720px){ #drawer p.more3{display:none} }
+  @media (max-height:560px){ #drawer p.more{display:none} }
+  @media (max-height:430px){ #drawer p{display:none} #drawer p.keep{display:block} }
+
+  #inapp{position:fixed;inset:0;z-index:50;display:none;align-items:center;justify-content:center;padding:24px;background:rgba(7,8,12,.95);text-align:center;font-size:15px;line-height:1.8}
+  #inapp.on{display:flex}
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+
+<div id="bar">
+  <div class="sl"><label for="ang">빛이 들어가는 각도</label><input id="ang" type="range" min="0" max="89" step="0.1" value="40"><b id="angV">40.0°</b></div>
+  <div class="seg" id="segK"><button data-k="1" class="on">1차 무지개</button><button data-k="2">2차 무지개</button><button data-k="3">둘 다</button></div>
+  <button class="tg" id="tgBundle">빛다발</button>
+  <button class="ib" id="btnInfo" aria-label="실험 이야기와 설정">ⓘ</button>
+</div>
+
+<div id="drawer">
+  <h2>디트리히와 알파리시의 실험</h2>
+  <p class="keep">14세기 초, 독일의 수도사인<br>프라이베르크의 디트리히와<br>페르시아의 학자 카말 알딘 알파리시는<br>서로를 모른 채 같은 생각을 했어요.<br>물을 가득 채운 둥근 유리병을<br>커다란 빗방울로 삼아 햇빛을 비춰 본 거예요.</p>
+  <p class="more">두 사람은 밝혀냈어요.<br>1차 무지개는 빗방울 안에서<br>두 번 꺾이고 한 번 반사된 빛이고,<br>2차 무지개는 두 번 반사된 빛이라는 것을요.<br>2차 무지개의 색 순서가 거꾸로인 까닭도<br>이 길에서 나와요.</p>
+  <p class="more more3">입사각을 바꿔 보면<br>돌아 나오는 각이 커지다가<br>어느 각도에서 잠시 멈춰요.<br>그 언저리의 빛이 한 방향으로 몰려서<br>하늘에 밝은 무지개 띠가 생겨요.</p>
+  <div class="lab">빛 색깔</div>
+  <div class="seg row" id="segCol"><button data-c="white" class="on">햇빛</button><button data-c="red">빨강</button><button data-c="green">초록</button><button data-c="violet">보라</button></div>
+  <div class="lab">바로 가기</div>
+  <div class="row"><button class="ib" id="goMin">가장 밝은 각도로</button><button class="ib" id="goFull">전체 화면</button><a class="ib" href="../" style="text-decoration:none">프리즘 무지개 →</a></div>
+</div>
+
+<div id="inapp"><div>이 앱 안의 브라우저에서는 제대로 보이지 않아요.<br>⋯ 메뉴에서 <b>'Safari로 열기'</b>를 눌러 주세요.</div></div>
+<script>if (window.__IOS_INAPP__) setTimeout(function(){ document.getElementById('inapp').classList.add('on'); }, 700);</script>
+
+<script>
+(() => {
+/* ================= 빛의 물리 ================= */
+// 물의 굴절률 (파장 nm)
+const nWater = l => 1.3199 + 6878/(l*l) - 1.132e9/(l**4) + 1.11e14/(l**6);
+// CIE 1931 등색함수 근사 → 선형 sRGB
+const gpk = (x,m,s1,s2) => { const t = (x-m)/(x<m?s1:s2); return Math.exp(-0.5*t*t); };
+function specLin(l){
+  const X = 1.056*gpk(l,599.8,37.9,31.0) + 0.362*gpk(l,442.0,16.0,26.7) - 0.065*gpk(l,501.1,20.4,26.2);
+  const Y = 0.821*gpk(l,568.8,46.9,40.5) + 0.286*gpk(l,530.9,16.3,31.1);
+  const Z = 1.217*gpk(l,437.0,11.8,36.0) + 0.681*gpk(l,459.0,26.0,13.8);
+  return [Math.max(0, 3.2406*X - 1.5372*Y - 0.4986*Z), Math.max(0, -0.9689*X + 1.8758*Y + 0.0415*Z), Math.max(0, 0.0557*X - 0.2040*Y + 1.0570*Z)];
+}
+const toSRGB = v => { v = Math.max(0, Math.min(1, v)); return v <= 0.0031308 ? 12.92*v : 1.055*Math.pow(v, 1/2.4) - 0.055; };
+function hueCSS(l){ // 화면용 순색
+  const c = specLin(l), m = Math.max(c[0], c[1], c[2]) || 1;
+  return [toSRGB(c[0]/m)*255|0, toSRGB(c[1]/m)*255|0, toSRGB(c[2]/m)*255|0];
+}
+const COLOR_SETS = {
+  white:  Array.from({length: 16}, (_, i) => 405 + 290*i/15),
+  red:    [680], green: [530], violet: [410]
+};
+
+function fresnel(ci, ct, n1, n2){
+  const rs = (n1*ci - n2*ct) / (n1*ci + n2*ct), rp = (n1*ct - n2*ci) / (n1*ct + n2*ci);
+  return 0.5*(rs*rs + rp*rp);
+}
+// 단위 원(빗방울)에 높이 b로 왼쪽에서 들어오는 빛: k번 반사 후 나감
+function tracePath(b, n, k){
+  const x1 = -Math.sqrt(Math.max(0, 1 - b*b));
+  let P = [x1, b], d = [1, 0];
+  const pts = [P], lost = [];
+  // 들어갈 때
+  let N = P, ci = -(d[0]*N[0] + d[1]*N[1]);
+  const eta = 1/n, ct = Math.sqrt(1 - eta*eta*(1 - ci*ci));
+  const R0 = fresnel(ci, ct, 1, n);
+  lost.push({ p: P, d: [d[0] + 2*ci*N[0], d[1] + 2*ci*N[1]], w: R0 });
+  d = [eta*d[0] + (eta*ci - ct)*N[0], eta*d[1] + (eta*ci - ct)*N[1]];
+  let T = 1 - R0;
+  for (let j = 0; j <= k; j++){
+    const t = -2*(P[0]*d[0] + P[1]*d[1]);
+    const Q = [P[0] + d[0]*t, P[1] + d[1]*t];
+    N = Q;
+    const c = d[0]*N[0] + d[1]*N[1];
+    const kk = 1 - n*n*(1 - c*c), cto = Math.sqrt(Math.max(0, kk));
+    const R = kk < 0 ? 1 : fresnel(c, cto, n, 1);
+    const out = [n*d[0] - (n*c - cto)*N[0], n*d[1] - (n*c - cto)*N[1]];
+    pts.push(Q);
+    if (j < k){
+      if (kk >= 0) lost.push({ p: Q, d: out, w: T*(1 - R) });
+      d = [d[0] - 2*c*N[0], d[1] - 2*c*N[1]];
+      T *= R;
+    } else {
+      d = out; T *= 1 - R;
+    }
+    P = Q;
+  }
+  return { pts, d, T, lost };
+}
+const DEG = Math.PI / 180;
+// 해의 반대쪽에서 잰 각 (무지개 각)
+function rainbowAngle(iDeg, n, k){
+  const i = iDeg*DEG, r = Math.asin(Math.sin(i)/n);
+  return k === 1 ? (4*r - 2*i)/DEG : 180 + (2*i - 6*r)/DEG;
+}
+const iMin = (n, k) => Math.acos(Math.sqrt((n*n - 1)/(k*(k + 2)))) / DEG;
+
+/* ================= 하늘에 보이는 무지개 (미리 계산) ================= */
+const SKY_MAX = 64, BIN = 0.1, NB = Math.round(SKY_MAX/BIN);
+const skyRGB = (() => {
+  const L = Array.from({length: 40}, (_, i) => 400 + 300*(i + 0.5)/40);
+  const spec = L.map(specLin), sum = [0,0,0];
+  spec.forEach(c => { sum[0]+=c[0]; sum[1]+=c[1]; sum[2]+=c[2]; });
+  spec.forEach(c => { c[0]/=sum[0]; c[1]/=sum[1]; c[2]/=sum[2]; });
+  const acc = Array.from({length: 3}, () => new Float64Array(NB * 3)); // [k=1, k=2, 합] RGB
+  const NS = 5000;
+  L.forEach((l, li) => {
+    const n = nWater(l);
+    for (const k of [1, 2]){
+      const h = new Float64Array(NB);
+      for (let s = 0; s < NS; s++){
+        const b = (s + 0.5) / NS, i = Math.asin(b), r = Math.asin(b/n);
+        const ci = Math.cos(i), cr = Math.cos(r);
+        const R = fresnel(ci, cr, 1, n);
+        const w = (1 - R) * (1 - R) * Math.pow(R, k) * b;
+        const th = k === 1 ? (4*r - 2*i)/DEG : 180 + (2*i - 6*r)/DEG;
+        if (th < 0 || th >= SKY_MAX) continue;
+        h[(th/BIN)|0] += w;
+      }
+      // 해의 겉보기 크기(0.5°)만큼 흐림
+      const hb = new Float64Array(NB), rad = 3;
+      for (let j = 0; j < NB; j++){ let s2 = 0, c2 = 0; for (let q = -rad; q <= rad; q++){ const jj = j + q; if (jj >= 0 && jj < NB){ s2 += h[jj]; c2++; } } hb[j] = s2 / c2; }
+      for (let j = 0; j < NB; j++){
+        const th = (j + 0.5) * BIN, v = hb[j] / Math.sin(th*DEG);
+        for (let ch = 0; ch < 3; ch++){ acc[k-1][j*3+ch] += v * spec[li][ch]; acc[2][j*3+ch] += v * spec[li][ch]; }
+      }
+    }
+  });
+  // 1차 무지개의 가장 밝은 곳 기준으로 맞춤
+  let mx = 0; for (let j = Math.round(38/BIN); j < Math.round(44/BIN); j++) mx = Math.max(mx, acc[0][j*3], acc[0][j*3+1], acc[0][j*3+2]);
+  acc.forEach(a => { for (let j = 0; j < a.length; j++) a[j] /= mx; });
+  return acc;
+})();
+
+/* ================= 화면 ================= */
+const cv = document.getElementById('c'), ctx = cv.getContext('2d');
+const bar = document.getElementById('bar'), drawer = document.getElementById('drawer');
+const ang = document.getElementById('ang'), angV = document.getElementById('angV');
+const state = { i: 40, k: 1, bundle: false, col: 'white' };
+let W = 0, H = 0, DPR = 1, L = {}, skyImg = null, dirty = true;
+
+function layout(){
+  DPR = Math.min(window.devicePixelRatio || 1, 2);
+  W = window.innerWidth; H = window.innerHeight;
+  const bh = bar.offsetHeight;
+  document.documentElement.style.setProperty('--barh', bh + 'px');
+  const ah = H - bh;
+  cv.width = W*DPR; cv.height = ah*DPR; cv.style.width = W + 'px'; cv.style.height = ah + 'px';
+  const top = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--sat')) || 0;
+  if (W >= ah * 1.15){
+    const mw = Math.round(W * 0.63);
+    L.main = { x: 0, y: 0, w: mw, h: ah };
+    const pw = W - mw, g = 10;
+    L.graph = { x: mw + g, y: g + top, w: pw - 2*g, h: (ah - top) * 0.46 - g };
+    L.sky   = { x: mw + g, y: L.graph.y + L.graph.h + g, w: pw - 2*g, h: ah - (L.graph.y + L.graph.h + g) - g };
+  } else {
+    const mh = Math.round(ah * 0.6);
+    L.main = { x: 0, y: 0, w: W, h: mh };
+    const g = 8, bw = (W - 3*g) / 2;
+    L.graph = { x: g, y: mh + 2, w: bw, h: ah - mh - g - 2 };
+    L.sky   = { x: 2*g + bw, y: mh + 2, w: bw, h: ah - mh - g - 2 };
+  }
+  const m = L.main;
+  L.R = Math.min(m.w * 0.27, m.h * 0.33);
+  L.cx = m.x + m.w * 0.6; L.cy = m.y + m.h * 0.52;
+  buildSky();
+  dirty = true;
+}
+
+// 하늘 그림
+function buildSky(){
+  const s = L.sky, w = Math.max(10, Math.round(s.w*DPR)), h = Math.max(10, Math.round(s.h*DPR));
+  const img = ctx.createImageData(w, h), D = img.data;
+  const ox = w/2, oy = h * 1.0, scale = Math.min(h * 0.95, w * 0.5 * 0.98) / 58; // 픽셀/도
+  const hor = h * 0.94;
+  for (let y = 0; y < h; y++){
+    for (let x = 0; x < w; x++){
+      const dx = x - ox, dy = oy - y, th = Math.hypot(dx, dy) / scale;
+      const t = y / h;
+      let r = 0.010 + 0.022*t, g = 0.013 + 0.026*t, b = 0.026 + 0.036*t; // 비 갠 뒤 어스름한 하늘 (선형)
+      if (y > hor){ r = 0.010; g = 0.013; b = 0.009; }
+      else if (th < SKY_MAX){
+        const j = Math.min(NB - 1, (th/BIN)|0), a = skyRGB[state.k === 3 ? 2 : state.k - 1];
+        const kk = 0.38;
+        r += a[j*3]*kk; g += a[j*3+1]*kk; b += a[j*3+2]*kk;
+      }
+      const o = (y*w + x)*4;
+      const tm = v => toSRGB(v / (1 + v*0.5)) * 255;
+      D[o] = tm(r); D[o+1] = tm(g); D[o+2] = tm(b); D[o+3] = 255;
+    }
+  }
+  skyImg = { img, w, h, ox, oy, scale };
+}
+
+const curN = l => nWater(l);
+function lambdas(){ return COLOR_SETS[state.col]; }
+
+function drawRay(b, k, lams, alphaScale, withLost){
+  const m = L.main, R = L.R, cx = L.cx, cy = L.cy;
+  const toS = p => [cx + p[0]*R, cy - p[1]*R];
+  const far = Math.hypot(m.w, m.h) * 1.2;
+  ctx.globalCompositeOperation = 'lighter';
+  const a0 = Math.min(1, 2.4 / lams.length) * alphaScale;
+  for (const l of lams){
+    const n = curN(l), path = tracePath(b, n, k), col = hueCSS(l);
+    const pts = path.pts.map(toS);
+    // 유리병 안
+    ctx.strokeStyle = `rgba(${col[0]},${col[1]},${col[2]},${a0 * 0.95})`;
+    ctx.lineWidth = 1.6;
+    ctx.beginPath(); ctx.moveTo(pts[0][0], pts[0][1]);
+    for (let q = 1; q < pts.length; q++) ctx.lineTo(pts[q][0], pts[q][1]);
+    // 나간 빛
+    const e = pts[pts.length - 1], d = path.d;
+    ctx.lineTo(e[0] + d[0]*far, e[1] - d[1]*far);
+    ctx.stroke();
+    if (withLost){
+      for (const ls of path.lost){
+        const p = toS(ls.p);
+        ctx.strokeStyle = `rgba(${col[0]},${col[1]},${col[2]},${a0 * Math.min(0.35, ls.w * 1.2)})`;
+        ctx.lineWidth = 1;
+        ctx.beginPath(); ctx.moveTo(p[0], p[1]); ctx.lineTo(p[0] + ls.d[0]*far*0.5, p[1] - ls.d[1]*far*0.5); ctx.stroke();
+      }
+    }
+  }
+  ctx.globalCompositeOperation = 'source-over';
+}
+
+function drawMain(){
+  const m = L.main, R = L.R, cx = L.cx, cy = L.cy;
+  ctx.save();
+  ctx.beginPath(); ctx.rect(m.x, m.y, m.w, m.h); ctx.clip();
+  // 배경
+  const bg = ctx.createRadialGradient(cx, cy, R*0.5, cx, cy, Math.max(m.w, m.h));
+  bg.addColorStop(0, '#141419'); bg.addColorStop(1, '#07080c');
+  ctx.fillStyle = bg; ctx.fillRect(m.x, m.y, m.w, m.h);
+
+  // 해와 나란한 기준선 (해의 반대쪽 방향)
+  ctx.setLineDash([4, 6]); ctx.strokeStyle = 'rgba(242,234,217,.18)'; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(m.x, cy); ctx.lineTo(cx + R*1.35, cy); ctx.stroke(); ctx.setLineDash([]);
+
+  // 유리병 (둥근 플라스크)
+  const neckW = R*0.28, neckH = R*0.42;
+  const wg = ctx.createRadialGradient(cx - R*0.3, cy - R*0.35, R*0.1, cx, cy, R);
+  wg.addColorStop(0, 'rgba(120,170,210,.20)'); wg.addColorStop(1, 'rgba(40,90,140,.28)');
+  ctx.fillStyle = wg;
+  ctx.beginPath(); ctx.arc(cx, cy, R, 0, Math.PI*2); ctx.fill();
+  ctx.fillStyle = 'rgba(120,170,210,.10)';
+  ctx.fillRect(cx - neckW/2, cy - R - neckH + R*0.04, neckW, neckH);
+  ctx.strokeStyle = 'rgba(220,235,245,.55)'; ctx.lineWidth = 2;
+  const ga = Math.asin(neckW/2/R);
+  ctx.beginPath(); ctx.arc(cx, cy, R, -Math.PI/2 + ga, -Math.PI/2 - ga + Math.PI*2); ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(cx - neckW/2, cy - R*Math.cos(ga)); ctx.lineTo(cx - neckW/2, cy - R - neckH);
+  ctx.moveTo(cx + neckW/2, cy - R*Math.cos(ga)); ctx.lineTo(cx + neckW/2, cy - R - neckH);
+  ctx.stroke();
+  ctx.beginPath(); ctx.ellipse(cx, cy - R - neckH, neckW/2 + 3, 3.5, 0, 0, Math.PI*2); ctx.stroke();
+  // 물 높이 선
+  ctx.strokeStyle = 'rgba(160,200,230,.35)'; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(cx - neckW/2, cy - R - neckH*0.55); ctx.lineTo(cx + neckW/2, cy - R - neckH*0.55); ctx.stroke();
+  // 하이라이트
+  ctx.strokeStyle = 'rgba(255,255,255,.12)'; ctx.lineWidth = Math.max(2, R*0.022);
+  ctx.beginPath(); ctx.arc(cx, cy, R*0.9, Math.PI*1.12, Math.PI*1.3); ctx.stroke();
+
+  const b = Math.sin(state.i * DEG);
+  const lams = lambdas();
+  const ks = state.k === 3 ? [1, 2] : [state.k];
+
+  // 빛다발
+  if (state.bundle){
+    const M = 46, lb = state.col === 'white' ? [415, 450, 490, 530, 570, 610, 650, 690] : lams;
+    for (const k of ks) for (let j = 0; j < M; j++){
+      const bb = (j + 0.5) / M;
+      drawRay(bb, k, lb, 0.2, false);
+      // 들어오는 빛
+    }
+    ctx.strokeStyle = 'rgba(255,248,230,.07)'; ctx.lineWidth = 1;
+    for (let j = 0; j < M; j++){ const yy = cy - (j + 0.5)/M*R; ctx.beginPath(); ctx.moveTo(m.x, yy); ctx.lineTo(cx - Math.sqrt(1 - ((j+0.5)/M)**2)*R, yy); ctx.stroke(); }
+  }
+
+  // 들어오는 햇빛
+  const ey = cy - b*R, ex = cx - Math.sqrt(1 - b*b)*R;
+  ctx.globalCompositeOperation = 'lighter';
+  for (const [w, a] of [[9, .06], [4, .18], [1.8, .9]]){
+    ctx.strokeStyle = `rgba(255,248,232,${a})`; ctx.lineWidth = w;
+    ctx.beginPath(); ctx.moveTo(m.x, ey); ctx.lineTo(ex, ey); ctx.stroke();
+  }
+  ctx.globalCompositeOperation = 'source-over';
+  // 화살표와 해
+  ctx.fillStyle = 'rgba(255,240,200,.9)';
+  const ax = m.x + Math.min(70, m.w*0.12);
+  ctx.beginPath(); ctx.moveTo(ax + 8, ey); ctx.lineTo(ax - 4, ey - 5); ctx.lineTo(ax - 4, ey + 5); ctx.fill();
+  ctx.font = `${Math.round(Math.max(11, Math.min(15, m.h*0.032)))}px 'Gowun Batang', serif`;
+  ctx.fillStyle = 'rgba(255,236,190,.8)';
+  ctx.fillText('햇빛', m.x + Math.min(38, m.w*0.07) + 16, ey - 9);
+
+  // 빛의 길
+  for (const k of ks) drawRay(b, k, lams, 1, true);
+
+  // 들어가는 곳: 법선과 입사각
+  const nx = ex - cx, ny = ey - cy, nl = Math.hypot(nx, ny);
+  ctx.setLineDash([3, 4]); ctx.strokeStyle = 'rgba(242,234,217,.35)'; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(ex + nx/nl*R*0.32, ey + ny/nl*R*0.32); ctx.lineTo(ex - nx/nl*R*0.32, ey - ny/nl*R*0.32); ctx.stroke(); ctx.setLineDash([]);
+  if (state.i > 1.5){
+    let aN = Math.atan2(ny, nx); if (aN < 0) aN += Math.PI*2;   // 바깥쪽 법선
+    ctx.strokeStyle = 'rgba(232,200,142,.9)'; ctx.lineWidth = 1.4;
+    const rr = R*0.2;
+    const a1 = Math.min(aN, Math.PI), a2 = Math.max(aN, Math.PI);
+    ctx.beginPath(); ctx.arc(ex, ey, rr, a1, a2); ctx.stroke();
+  }
+  // 손잡이 (끌어서 높이 바꾸기)
+  ctx.fillStyle = 'rgba(255,246,226,.95)'; ctx.strokeStyle = 'rgba(201,168,106,1)'; ctx.lineWidth = 2;
+  const hx = m.x + Math.min(38, m.w*0.07);
+  ctx.beginPath(); ctx.arc(hx, ey, 9, 0, Math.PI*2); ctx.fill(); ctx.stroke();
+  ctx.fillStyle = 'rgba(120,90,40,1)';
+  ctx.beginPath(); ctx.moveTo(hx, ey - 5); ctx.lineTo(hx - 3.5, ey - 1); ctx.lineTo(hx + 3.5, ey - 1); ctx.fill();
+  ctx.beginPath(); ctx.moveTo(hx, ey + 5); ctx.lineTo(hx - 3.5, ey + 1); ctx.lineTo(hx + 3.5, ey + 1); ctx.fill();
+
+  // 무지개 각 표시
+  const lc = state.col === 'white' ? 589 : lams[0];
+  for (const k of ks){
+    const n = curN(lc), path = tracePath(b, n, k);
+    const e = path.pts[path.pts.length - 1], d = path.d;
+    const th = Math.acos(Math.max(-1, Math.min(1, -d[0])));
+    if (th / DEG > 89) continue;
+    // 나간 빛을 뒤로 늘여 기준선(해의 반대쪽 방향)과 만나는 점에서 각을 그림
+    if (Math.abs(d[1]) < 1e-4) continue;
+    const sB = -e[1] / d[1];
+    const ox = cx + (e[0] + d[0]*sB)*R, oy = cy;
+    if (Math.abs(ox - cx) > R*2.5) continue;
+    let aD = Math.atan2(-d[1], d[0]); if (aD < 0) aD += Math.PI*2;
+    const a1 = Math.min(Math.PI, aD), a2 = Math.max(Math.PI, aD);
+    const rad = R * 0.7;
+    ctx.strokeStyle = 'rgba(232,200,142,.8)'; ctx.lineWidth = 1.3;
+    ctx.beginPath(); ctx.arc(ox, oy, rad, a1, a2); ctx.stroke();
+    const mid = (a1 + a2) / 2;
+    ctx.fillStyle = 'rgba(232,200,142,1)';
+    ctx.font = `${Math.round(Math.max(11, Math.min(15, m.h*0.032)))}px 'Gowun Batang', serif`;
+    ctx.textAlign = 'right';
+    ctx.fillText((th/DEG).toFixed(1) + '°', ox + Math.cos(mid)*(rad + 6), oy + Math.sin(mid)*(rad + 6) + 5);
+    ctx.textAlign = 'left';
+  }
+  ctx.restore();
+
+  // 읽음표
+  const fs = Math.round(Math.max(11.5, Math.min(15, Math.min(W, H) * 0.03)));
+  ctx.font = `${fs}px 'Gowun Batang', serif`;
+  let y = m.y + fs*1.6 + (parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--sat')) || 0);
+  const x = m.x + 14;
+  const n589 = curN(589), r = Math.asin(Math.sin(state.i*DEG)/n589)/DEG;
+  ctx.fillStyle = 'rgba(242,234,217,.95)';
+  ctx.fillText(`입사각 ${state.i.toFixed(1)}° · 굴절각 ${r.toFixed(1)}°`, x, y); y += fs*1.5;
+  ctx.fillStyle = 'rgba(242,234,217,.7)';
+  for (const k of ks){
+    const tr = rainbowAngle(state.i, curN(680), k), tv = rainbowAngle(state.i, curN(410), k);
+    const name = k === 1 ? '1차' : '2차';
+    if (tr > 89 && tv > 89) ctx.fillText(`${name}: 빛이 해 쪽으로 돌아오지 않아요`, x, y);
+    else ctx.fillText(`${name} · 해 반대쪽에서  빨강 ${tr.toFixed(1)}°  보라 ${tv.toFixed(1)}°`, x, y);
+    y += fs*1.45;
+  }
+  for (const k of ks){
+    if (Math.abs(state.i - iMin(n589, k)) < 1.2){
+      ctx.fillStyle = 'rgba(232,200,142,1)';
+      ctx.fillText(`✦ ${k === 1 ? '1차' : '2차'} 무지개 각도 — 빛이 가장 많이 모여요`, x, y); y += fs*1.45;
+    }
+  }
+}
+
+function box(r, title){
+  ctx.fillStyle = 'rgba(255,255,255,.025)'; ctx.strokeStyle = 'rgba(242,234,217,.12)'; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.roundRect ? ctx.roundRect(r.x, r.y, r.w, r.h, 10) : ctx.rect(r.x, r.y, r.w, r.h); ctx.fill(); ctx.stroke();
+  const fs = Math.round(Math.max(10.5, Math.min(14, Math.min(r.w*0.055, r.h*0.08))));
+  ctx.font = `${fs}px 'Gowun Batang', serif`; ctx.fillStyle = 'rgba(242,234,217,.8)';
+  ctx.fillText(title, r.x + 10, r.y + fs + 6);
+  return fs;
+}
+
+function drawGraph(){
+  const r = L.graph, fs = box(r, '입사각에 따라 돌아 나오는 각');
+  const p = { x: r.x + fs*2.6, y: r.y + fs*2.2, w: r.w - fs*3.6, h: r.h - fs*4.6 };
+  if (p.w < 30 || p.h < 30) return;
+  const X = i => p.x + i/90*p.w, Y = t => p.y + p.h - t/70*p.h;
+  ctx.strokeStyle = 'rgba(242,234,217,.25)'; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(p.x, p.y); ctx.lineTo(p.x, p.y + p.h); ctx.lineTo(p.x + p.w, p.y + p.h); ctx.stroke();
+  ctx.font = `${Math.round(fs*0.82)}px 'Gowun Batang', serif`; ctx.fillStyle = 'rgba(242,234,217,.5)';
+  ctx.textAlign = 'center';
+  for (const i of [0, 30, 60, 90]) ctx.fillText(i + '°', X(i), p.y + p.h + fs*1.1);
+  ctx.fillText('입사각', p.x + p.w/2, p.y + p.h + fs*2.2);
+  ctx.textAlign = 'right';
+  for (const t of [0, 20, 40, 60]){ ctx.fillText(t + '°', p.x - 4, Y(t) + 4);
+    ctx.strokeStyle = 'rgba(242,234,217,.06)'; ctx.beginPath(); ctx.moveTo(p.x, Y(t)); ctx.lineTo(p.x + p.w, Y(t)); ctx.stroke(); }
+  ctx.textAlign = 'left';
+  const ks = state.k === 3 ? [1, 2] : [state.k];
+  ctx.save(); ctx.beginPath(); ctx.rect(p.x, p.y, p.w, p.h); ctx.clip();
+  for (const k of ks){
+    for (const l of [680, 410]){
+      const c = hueCSS(l), n = curN(l);
+      ctx.strokeStyle = `rgba(${c[0]},${c[1]},${c[2]},.9)`; ctx.lineWidth = 1.6;
+      ctx.beginPath();
+      for (let i = 0; i <= 90; i += 0.5){ const t = rainbowAngle(Math.min(i, 89.9), n, k); i ? ctx.lineTo(X(i), Y(t)) : ctx.moveTo(X(i), Y(t)); }
+      ctx.stroke();
+    }
+    // 가장 밝은 곳
+    const im = iMin(curN(589), k), tm = rainbowAngle(im, curN(589), k);
+    ctx.setLineDash([2, 3]); ctx.strokeStyle = 'rgba(232,200,142,.45)';
+    ctx.beginPath(); ctx.moveTo(p.x, Y(tm)); ctx.lineTo(X(im), Y(tm)); ctx.stroke(); ctx.setLineDash([]);
+  }
+  // 지금 각도
+  ctx.strokeStyle = 'rgba(255,246,226,.55)'; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(X(state.i), p.y); ctx.lineTo(X(state.i), p.y + p.h); ctx.stroke();
+  for (const k of ks) for (const l of [680, 410]){
+    const t = rainbowAngle(state.i, curN(l), k), c = hueCSS(l);
+    ctx.fillStyle = `rgb(${c[0]},${c[1]},${c[2]})`;
+    ctx.beginPath(); ctx.arc(X(state.i), Y(t), 3.5, 0, Math.PI*2); ctx.fill();
+  }
+  ctx.restore();
+}
+
+function render(){
+  ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+  ctx.fillStyle = '#07080c'; ctx.fillRect(0, 0, W, H);
+  drawMain();
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  drawSkyPixels();
+  ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+  drawSkyOverlay();
+  drawGraph();
+}
+function drawSkyPixels(){
+  const r = L.sky; if (!skyImg) return;
+  ctx.putImageData(skyImg.img, Math.round(r.x*DPR), Math.round(r.y*DPR));
+}
+function drawSkyOverlay(){
+  const r = L.sky;
+  ctx.strokeStyle = 'rgba(242,234,217,.12)'; ctx.lineWidth = 1;
+  ctx.strokeRect(r.x + .5, r.y + .5, r.w - 1, r.h - 1);
+  const fs = Math.round(Math.max(10.5, Math.min(14, Math.min(r.w*0.055, r.h*0.08))));
+  ctx.font = `${fs}px 'Gowun Batang', serif`; ctx.fillStyle = 'rgba(242,234,217,.8)';
+  ctx.fillText('해를 등지고 본 하늘', r.x + 10, r.y + fs + 6);
+  const s = skyImg; if (!s) return;
+  const ox = r.x + s.ox/DPR, oy = r.y + s.oy/DPR, sc = s.scale/DPR;
+  const ks = state.k === 3 ? [1, 2] : [state.k];
+  ctx.save(); ctx.beginPath(); ctx.rect(r.x, r.y, r.w, r.h*0.94); ctx.clip();
+  for (const k of ks){
+    const t = rainbowAngle(state.i, curN(589), k);
+    if (!(t > 0 && t < SKY_MAX)) continue;
+    ctx.setLineDash([3, 5]); ctx.strokeStyle = 'rgba(255,248,230,.8)'; ctx.lineWidth = 1.2;
+    ctx.beginPath(); ctx.arc(ox, oy, t*sc, Math.PI, Math.PI*2); ctx.stroke(); ctx.setLineDash([]);
+  }
+  ctx.restore();
+  ctx.font = `${Math.round(fs*0.82)}px 'Gowun Batang', serif`; ctx.fillStyle = 'rgba(242,234,217,.6)';
+  ctx.textAlign = 'center';
+  ctx.fillText('점선: 지금 이 빛이 보이는 자리', r.x + r.w/2, r.y + r.h - fs*0.45);
+  ctx.textAlign = 'left';
+}
+
+function loop(){ if (dirty){ dirty = false; render(); } requestAnimationFrame(loop); }
+
+/* ================= 조작 ================= */
+function setI(v){
+  state.i = Math.max(0, Math.min(89, v));
+  ang.value = state.i; angV.textContent = state.i.toFixed(1) + '°';
+  dirty = true;
+}
+ang.addEventListener('input', () => setI(+ang.value));
+let drag = false;
+function yToI(py){ const b = (L.cy - py) / L.R; return Math.asin(Math.max(0, Math.min(0.9998, b))) / DEG; }
+cv.addEventListener('pointerdown', e => {
+  drawer.classList.remove('open');
+  const m = L.main;
+  if (e.offsetX > m.x + m.w || e.offsetY > m.y + m.h) return;
+  drag = true; cv.setPointerCapture(e.pointerId); setI(yToI(e.offsetY));
+});
+cv.addEventListener('pointermove', e => { if (drag) setI(yToI(e.offsetY)); });
+cv.addEventListener('pointerup', () => drag = false);
+cv.addEventListener('pointercancel', () => drag = false);
+
+document.getElementById('segK').addEventListener('click', e => {
+  const b = e.target.closest('button'); if (!b) return;
+  document.querySelectorAll('#segK button').forEach(x => x.classList.toggle('on', x === b));
+  state.k = +b.dataset.k; buildSky(); dirty = true;
+});
+document.getElementById('segCol').addEventListener('click', e => {
+  const b = e.target.closest('button'); if (!b) return;
+  document.querySelectorAll('#segCol button').forEach(x => x.classList.toggle('on', x === b));
+  state.col = b.dataset.c; dirty = true;
+});
+const tgB = document.getElementById('tgBundle');
+tgB.addEventListener('click', () => { state.bundle = !state.bundle; tgB.classList.toggle('on', state.bundle); dirty = true; });
+document.getElementById('btnInfo').addEventListener('click', e => { e.stopPropagation(); drawer.classList.toggle('open'); });
+document.getElementById('goMin').addEventListener('click', () => {
+  const k = state.k === 2 ? 2 : 1, target = iMin(curN(589), k), start = state.i, t0 = performance.now();
+  const step = now => { const u = Math.min(1, (now - t0) / 700), s = u*u*(3 - 2*u); setI(start + (target - start)*s); if (u < 1) requestAnimationFrame(step); };
+  requestAnimationFrame(step);
+});
+const goFull = document.getElementById('goFull');
+if (!(document.documentElement.requestFullscreen || document.documentElement.webkitRequestFullscreen)) goFull.style.display = 'none';
+goFull.addEventListener('click', async () => {
+  const d = document, el = d.documentElement;
+  try {
+    if (d.fullscreenElement || d.webkitFullscreenElement) await (d.exitFullscreen ? d.exitFullscreen() : d.webkitExitFullscreen());
+    else await (el.requestFullscreen ? el.requestFullscreen({ navigationUI: 'hide' }) : el.webkitRequestFullscreen());
+  } catch (e) {}
+});
+
+window.addEventListener('resize', layout);
+if (window.visualViewport) window.visualViewport.addEventListener('resize', layout);
+if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => { dirty = true; });
+layout(); setI(40);
+requestAnimationFrame(loop);
+window.__ready = true;
+})();
+</script>
+</body>
+</html>
