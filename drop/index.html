@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
-<title>빗방울 속 무지개 — 디트리히와 알파리시의 실험</title>
+<title>빗방울 속 무지개</title>
 <meta name="description" content="물을 채운 둥근 유리병에 햇빛을 비춰 무지개의 비밀을 밝힌 14세기의 실험을 직접 해 보세요.">
 <meta name="theme-color" content="#07080c">
 <script>
@@ -26,7 +26,6 @@
 <style>
   :root{
     --ink:#f2ead9; --dim:rgba(242,234,217,.6); --line:rgba(242,234,217,.15); --gold:#e8c88e;
-    --panel:rgba(20,18,16,.72);
     --sat:env(safe-area-inset-top,0px); --sab:env(safe-area-inset-bottom,0px);
     --sal:env(safe-area-inset-left,0px); --sar:env(safe-area-inset-right,0px);
     --fs:clamp(11px, min(2vh, 3.3vw), 15px);
@@ -37,15 +36,34 @@
     -webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent}
   body{position:fixed;inset:0;height:100dvh}
   button,input{font-family:inherit;color:inherit}
+  [hidden]{display:none!important}
+  .grp{display:contents}
   #c{position:fixed;left:0;top:0;display:block;touch-action:none}
 
-  #bar{position:fixed;left:0;right:0;bottom:0;padding:8px calc(12px + var(--sar)) calc(8px + var(--sab)) calc(12px + var(--sal));
+  /* 1층: 위 — 앱 이름 · 세 단계 탭 · 설정/설명 */
+  #top{position:fixed;left:0;right:0;top:0;z-index:6;display:flex;align-items:center;gap:10px;font-size:var(--fs);
+    padding:calc(6px + var(--sat)) calc(10px + var(--sar)) 6px calc(14px + var(--sal));
+    background:linear-gradient(to bottom, rgba(7,8,12,.92), rgba(7,8,12,.62));border-bottom:1px solid var(--line);
+    backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)}
+  .brand{color:var(--gold);white-space:nowrap;letter-spacing:.03em}
+  .tabs{display:flex;gap:4px;flex:1;justify-content:center;min-width:0}
+  .tabs button{background:transparent;border:1px solid transparent;border-radius:99px;padding:.42em .95em;font-size:1em;cursor:pointer;white-space:nowrap;color:var(--dim)}
+  .tabs button i{font-style:normal;display:inline-grid;place-items:center;width:1.45em;height:1.45em;border-radius:50%;border:1px solid currentColor;font-size:.78em;margin-right:.45em;opacity:.8}
+  .tabs button.on{color:#fff;background:rgba(232,200,142,.18);border-color:rgba(232,200,142,.6)}
+  .tools{display:flex;gap:6px}
+  .icon{width:2.35em;height:2.35em;border-radius:50%;border:1px solid var(--line);background:rgba(255,255,255,.05);cursor:pointer;font-size:1em;line-height:1}
+  .icon.on{background:rgba(232,200,142,.28);border-color:rgba(232,200,142,.6)}
+  @media (max-width:700px){ .brand{display:none} .tabs{justify-content:flex-start} .tabs button{padding:.42em .6em} .tabs button i{margin-right:.3em} }
+  @media (max-width:380px){ .tabs button i{display:none} }
+
+  /* 2층: 아래 — 지금 단계의 핵심 조작만 */
+  #bar{position:fixed;left:0;right:0;bottom:0;z-index:5;padding:8px calc(12px + var(--sar)) calc(8px + var(--sab)) calc(12px + var(--sal));
     display:flex;flex-wrap:wrap;align-items:center;gap:8px 14px;font-size:var(--fs);
-    background:linear-gradient(to top, rgba(7,8,12,.96), rgba(7,8,12,.88));border-top:1px solid var(--line)}
-  .sl{flex:1 1 260px;display:flex;align-items:center;gap:10px;min-width:200px}
-  .sl label{white-space:nowrap;color:var(--dim)}
-  .sl b{font-weight:400;color:var(--ink);font-variant-numeric:tabular-nums;min-width:3.4em;text-align:right}
-  .sl b,.sl label{flex:none}
+    background:linear-gradient(to top, rgba(7,8,12,.96), rgba(7,8,12,.86));border-top:1px solid var(--line)}
+  .hint{color:var(--dim);flex:1 1 240px}
+  .sl{flex:1 1 230px;display:flex;align-items:center;gap:10px;min-width:180px}
+  .sl label{white-space:nowrap;color:var(--dim);flex:none}
+  .sl b{font-weight:400;color:var(--ink);font-variant-numeric:tabular-nums;min-width:3.4em;text-align:right;flex:none}
   input[type=range]{flex:1;min-width:60px;-webkit-appearance:none;appearance:none;height:28px;background:transparent;margin:0}
   input[type=range]::-webkit-slider-runnable-track{height:4px;border-radius:4px;background:linear-gradient(90deg,#3a3a46,#c9b48a)}
   input[type=range]::-moz-range-track{height:4px;border-radius:4px;background:linear-gradient(90deg,#3a3a46,#c9b48a)}
@@ -54,36 +72,45 @@
   .seg{display:flex;gap:4px}
   .seg button,.tg,.ib{background:rgba(255,255,255,.05);border:1px solid var(--line);border-radius:9px;padding:.45em .8em;font-size:1em;cursor:pointer;white-space:nowrap}
   .seg button.on,.tg.on{background:rgba(232,200,142,.2);border-color:rgba(232,200,142,.65);color:#fff}
-  .ib{padding:.45em .7em}
-
-  #drawer{position:fixed;z-index:10;right:calc(12px + var(--sar));bottom:calc(var(--barh, 60px) + 10px);
-    width:min(400px, calc(100vw - 24px));max-height:calc(100dvh - var(--barh, 60px) - 24px - var(--sat));
-    background:rgba(16,15,14,.94);border:1px solid var(--line);border-radius:16px;padding:clamp(10px,2vh,18px) 18px;
-    font-size:var(--fs);line-height:1.62;display:flex;flex-direction:column;gap:clamp(6px,1.3vh,12px);
-    opacity:0;transform:translateY(10px);pointer-events:none;transition:.25s;backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px)}
-  #drawer.open{opacity:1;transform:none;pointer-events:auto}
-  #drawer h2{margin:0;font-size:1.25em;font-weight:400;color:var(--gold)}
-  #drawer p{margin:0;color:rgba(242,234,217,.88);word-break:keep-all}
-  #drawer .row{display:flex;flex-wrap:wrap;gap:6px}
-  #drawer .lab{color:var(--dim);font-size:.9em}
-  @media (max-height:720px){ #drawer p.more3{display:none} }
-  @media (max-height:560px){ #drawer p.more{display:none} }
-  @media (max-height:430px){ #drawer p{display:none} #drawer p.keep{display:block} }
-
   a.ib{color:inherit;text-decoration:none;display:inline-block}
-  .grp{display:contents}
-  [hidden]{display:none!important}
+  .pick{display:flex;align-items:center;gap:.55em;background:rgba(232,200,142,.12);border:1px solid rgba(232,200,142,.55);border-radius:10px;padding:.45em .8em;font-size:1em;cursor:pointer;white-space:nowrap}
+  .pick small{color:var(--dim);font-size:.85em}
+  .pick.on{background:rgba(232,200,142,.28)}
+
+  /* 3층: 떠 있는 판 — 설명(ⓘ), 설정(⚙), 배치 고르기 */
+  .panel{position:fixed;z-index:10;right:calc(10px + var(--sar));top:calc(var(--toph, 52px) + 8px);
+    width:min(410px, calc(100vw - 20px));max-height:calc(100dvh - var(--toph, 52px) - var(--barh, 60px) - 18px);
+    background:rgba(16,15,14,.95);border:1px solid var(--line);border-radius:16px;padding:clamp(10px,1.8vh,18px) 18px;
+    font-size:var(--fs);line-height:1.6;display:flex;flex-direction:column;gap:clamp(6px,1.1vh,11px);overflow:hidden;
+    opacity:0;transform:translateY(-8px);pointer-events:none;transition:.22s;backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px)}
+  .panel.open{opacity:1;transform:none;pointer-events:auto}
+  .panel h2{margin:0;font-size:1.2em;font-weight:400;color:var(--gold)}
+  .panel p{margin:0;color:rgba(242,234,217,.88);word-break:keep-all}
+  .panel .row{display:flex;flex-wrap:wrap;gap:6px}
+  .panel .lab{color:var(--dim);font-size:.88em}
+  .panel .seg.row button{padding:.4em .55em}
+  .panel hr{border:0;border-top:1px solid var(--line);margin:2px 0;width:100%}
+  #sheet{left:calc(10px + var(--sal));right:auto;top:auto;bottom:calc(var(--barh, 60px) + 8px);transform:translateY(8px)}
+  #sheet.open{transform:none}
+  #sheet .grpT{color:var(--gold);font-size:.9em}
+  #sheet .opts{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+  #sheet .opt{text-align:left;background:rgba(255,255,255,.04);border:1px solid var(--line);border-radius:10px;padding:.45em .7em;cursor:pointer;font-size:1em;line-height:1.35}
+  #sheet .opt small{display:block;color:var(--dim);font-size:.8em}
+  #sheet .opt.on{border-color:rgba(232,200,142,.75);background:rgba(232,200,142,.16)}
+  @media (max-height:720px){ .panel p.more3{display:none} }
+  @media (max-height:580px){ .panel p.more{display:none} #sheet .opt small{display:none} }
+  @media (max-height:430px){ .panel p{display:none} .panel p.keep{display:block} }
+
+  /* 들판 설치: 이동 버튼(왼쪽 아래), 바로 가기(오른쪽 위) */
   #pad{position:fixed;z-index:4;left:calc(12px + var(--sal));bottom:calc(var(--barh, 60px) + 12px);
     display:grid;grid-template-areas:". f . zi" "l b r zo";gap:6px}
-  #pad .zb{display:none}
-  #dField.ground p.more{display:none}
-  #drawer .seg.row button{padding:.4em .55em}
-  #pad.drone .zb{display:block}
-  #jumps{position:fixed;z-index:4;right:calc(12px + var(--sar));top:calc(10px + var(--sat));display:flex;flex-wrap:wrap;justify-content:flex-end;gap:5px;max-width:min(430px, 58vw);font-size:var(--fs)}
-  #jumps button{background:rgba(20,18,16,.62);border:1px solid var(--line);border-radius:99px;padding:.4em .85em;font-size:1em;cursor:pointer;backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
   #pad button{width:46px;height:42px;border-radius:12px;border:1px solid var(--line);background:rgba(20,18,16,.55);
     font-size:16px;cursor:pointer;touch-action:none;backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
   #pad button.on{background:rgba(232,200,142,.3)}
+  #pad .zb{display:none}
+  #pad.drone .zb{display:block}
+  #jumps{position:fixed;z-index:4;right:calc(10px + var(--sar));top:calc(var(--toph, 52px) + 8px);display:flex;flex-wrap:wrap;justify-content:flex-end;gap:5px;max-width:min(430px, 58vw);font-size:var(--fs)}
+  #jumps button{background:rgba(20,18,16,.62);border:1px solid var(--line);border-radius:99px;padding:.4em .85em;font-size:1em;cursor:pointer;backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
   #inapp{position:fixed;inset:0;z-index:50;display:none;align-items:center;justify-content:center;padding:24px;background:rgba(7,8,12,.95);text-align:center;font-size:15px;line-height:1.8}
   #inapp.on{display:flex}
 </style>
@@ -91,58 +118,110 @@
 <body>
 <canvas id="c"></canvas>
 
+<header id="top">
+  <div class="brand">빗방울 속 무지개</div>
+  <nav class="tabs" id="tabs">
+    <button data-m="spray" class="on"><i>1</i>물 뿌리기</button>
+    <button data-m="flask"><i>2</i>물병 실험</button>
+    <button data-m="field"><i>3</i>들판 설치</button>
+  </nav>
+  <div class="tools">
+    <button class="icon" id="btnSet" aria-label="설정">⚙</button>
+    <button class="icon" id="btnInfo" aria-label="이야기와 설명">ⓘ</button>
+  </div>
+</header>
+
 <div id="bar">
-  <div class="seg" id="segMode"><button data-m="flask" class="on">물병 실험</button><button data-m="field">들판 무지개</button></div>
-  <div class="grp" id="gFlask">
+  <div class="grp" id="gSpray">
+    <span class="hint">화면을 누르면 그쪽으로 물을 뿌려요 · 누르고 있으면 계속</span>
+    <div class="sl"><label for="sprE">해 높이</label><input id="sprE" type="range" min="5" max="45" step="0.5" value="30"><b id="sprV">30°</b></div>
+  </div>
+  <div class="grp" id="gFlask" hidden>
     <div class="sl"><label for="ang">빛이 들어가는 각도</label><input id="ang" type="range" min="0" max="89" step="0.1" value="40"><b id="angV">40.0°</b></div>
     <div class="seg" id="segK"><button data-k="1" class="on">1차 무지개</button><button data-k="2">2차 무지개</button><button data-k="3">둘 다</button></div>
     <button class="tg" id="tgBundle">빛다발</button>
   </div>
   <div class="grp" id="gField" hidden>
+    <button class="pick" id="btnArr"><small>배치</small><span id="arrName">하늘 가득</span><span aria-hidden="true">▾</span></button>
     <div class="sl" id="slSun"><label for="sunE">해 높이</label><input id="sunE" type="range" min="3" max="70" step="0.5" value="24"><b id="sunV">24°</b></div>
-    <div class="sl" style="flex-basis:200px"><label for="tMin">시간 흐름</label><input id="tMin" type="range" min="-30" max="30" step="1" value="0"><b id="tV">0분</b></div>
-    <div class="seg" id="segArr"><button data-a="sky" class="on">하늘 가득</button><button data-a="ground">풀밭 위</button><button data-a="cone">원뿔 틀</button><button data-a="tube">유리관 아치</button><button data-a="design">구슬 1만 개</button></div>
-    <div class="seg" id="segDes" hidden><button data-d="A" class="on">A 완전한 고리</button><button data-d="B">B 오래 가는 고리</button><button data-d="C">C 하루 종일</button></div>
-    <button class="tg" id="tgPlan">설치도</button>
+    <div class="sl" id="slTime"><label for="tMin" id="tLab">시간 흐름</label><input id="tMin" type="range" min="-30" max="30" step="1" value="0"><b id="tV">0분</b></div>
+    <div class="seg" id="segView"><button data-v="walk" class="on">걸어 보기</button><button data-v="drone">설치도</button></div>
   </div>
-  <button class="ib" id="btnInfo" aria-label="설명과 설정">ⓘ</button>
 </div>
+
 <div id="pad" hidden>
-  <button data-d="f" style="grid-area:f">▲</button><button data-d="l" style="grid-area:l">◀</button>
-  <button data-d="b" style="grid-area:b">▼</button><button data-d="r" style="grid-area:r">▶</button>
+  <button data-d="f" style="grid-area:f" aria-label="앞으로">▲</button><button data-d="l" style="grid-area:l" aria-label="왼쪽">◀</button>
+  <button data-d="b" style="grid-area:b" aria-label="뒤로">▼</button><button data-d="r" style="grid-area:r" aria-label="오른쪽">▶</button>
   <button data-d="zi" class="zb" style="grid-area:zi" aria-label="가까이">＋</button><button data-d="zo" class="zb" style="grid-area:zo" aria-label="멀리">－</button>
 </div>
 <div id="jumps" hidden></div>
 
-<div id="drawer">
- <div class="grp" id="dFlask">
-  <h2>디트리히와 알파리시의 실험</h2>
-  <p class="keep">14세기 초, 독일의 수도사인<br>프라이베르크의 디트리히와<br>페르시아의 학자 카말 알딘 알파리시는<br>서로를 모른 채 같은 생각을 했어요.<br>물을 가득 채운 둥근 유리병을<br>커다란 빗방울로 삼아 햇빛을 비춰 본 거예요.</p>
-  <p class="more">두 사람은 밝혀냈어요.<br>1차 무지개는 빗방울 안에서<br>두 번 꺾이고 한 번 반사된 빛이고,<br>2차 무지개는 두 번 반사된 빛이라는 것을요.<br>2차 무지개의 색 순서가 거꾸로인 까닭도<br>이 길에서 나와요.</p>
-  <p class="more more3">입사각을 바꿔 보면<br>돌아 나오는 각이 커지다가<br>어느 각도에서 잠시 멈춰요.<br>그 언저리의 빛이 한 방향으로 몰려서<br>하늘에 밝은 무지개 띠가 생겨요.</p>
-  <div class="lab">빛 색깔</div>
-  <div class="seg row" id="segCol"><button data-c="white" class="on">햇빛</button><button data-c="red">빨강</button><button data-c="green">초록</button><button data-c="violet">보라</button></div>
-  <div class="lab">바로 가기</div>
-  <div class="row"><button class="ib" id="goMin">가장 밝은 각도로</button><button class="ib" id="goFull">전체 화면</button><a class="ib" href="../" style="text-decoration:none">프리즘 무지개 →</a></div>
- </div>
- <div class="grp" id="dField" hidden>
-  <h2>거대 물방울로 만든 들판 무지개</h2>
-  <p class="keep">물을 채운 유리구를<br>들판 곳곳에 두었어요.<br>구 하나하나는 딱 한 가지 색만 내 눈에 보내요.<br>어떤 색일지는 그 구가<br>내 그림자 머리에서 몇 도 떨어져 있는지로 정해져요.</p>
-  <p class="more">42° 언저리의 구는 빨강,<br>40.5° 언저리의 구는 보라로 빛나요.<br>51° 언저리에는 색이 거꾸로인 2차 무지개가 생기고,<br>둘 사이는 어두워요.</p>
-  <p class="more more3"><b>하늘 가득</b>: 빗줄기처럼 허공에 흩어 둔 구<br><b>풀밭 위</b>: 땅에 깐 구 — 풀밭의 이슬 무지개<br><b>원뿔 틀</b>: 처음 자리에서만 완벽한 무지개<br><b>유리관 아치</b>: 물 채운 관을 무지개 모양으로 휜 것<br>걸어 보면 빛나는 구가 바뀌어요.<br>무지개는 늘 나를 따라오는, 나만의 무지개예요.</p>
-  <div class="grp" id="gGround" hidden>
-   <div class="lab">지형</div>
-   <div class="seg row" id="segTerr"><button data-t="flat" class="on">평지</button><button data-t="up">오르막</button><button data-t="down">내리막</button><button data-t="mound">둔덕</button></div>
-   <div class="lab">관람대 (눈높이)</div>
-   <div class="seg row" id="segEye"><button data-h="1.6" class="on">땅 1.6m</button><button data-h="3.2">3.2m</button><button data-h="5">5m</button></div>
-   <div class="lab">공 재료</div>
-   <div class="seg row" id="segMat"><button data-m="water" class="on">물 42°</button><button data-m="ice">얼음 46°</button><button data-m="glass">유리 21°</button><button data-m="fluoro">플루오로 55°</button></div>
+<div id="sheet" class="panel" aria-label="배치 고르기">
+  <div class="grpT">공중에 띄우기</div>
+  <div class="opts">
+    <button class="opt on" data-a="sky">하늘 가득<small>빗줄기처럼 흩어 둔 구</small></button>
+    <button class="opt" data-a="cone">원뿔 틀<small>한 자리를 위한 무지개</small></button>
+    <button class="opt" data-a="tube">유리관 아치<small>물 채운 관 12줄</small></button>
   </div>
-  <div class="lab">유리구 개수</div>
-  <div class="seg row" id="segN"><button data-n="10000">1만 개</button><button data-n="30000" class="on">3만 개</button><button data-n="60000">6만 개</button></div>
-  <div class="lab">바로 가기</div>
-  <div class="row"><button class="ib" id="goHome">처음 자리로</button><button class="ib" id="goFull2">전체 화면</button><a class="ib" href="../" style="text-decoration:none">프리즘 무지개 →</a></div>
- </div>
+  <div class="grpT">땅에 깔기</div>
+  <div class="opts">
+    <button class="opt" data-a="ground">풀밭 위<small>지형·관람대·재료 실험</small></button>
+    <button class="opt" data-a="design" data-d="A">구슬 1만 개 · A<small>완전한 고리, 약 4분</small></button>
+    <button class="opt" data-a="design" data-d="B">구슬 1만 개 · B<small>오래 가는 고리, 약 30분</small></button>
+    <button class="opt" data-a="design" data-d="C">구슬 1만 개 · C<small>하루 종일 무지개 조각</small></button>
+  </div>
+</div>
+
+<div id="info" class="panel" aria-label="이야기와 설명">
+  <div class="grp" id="iSpray">
+    <h2>물을 뿌리면 왜 무지개가 생길까</h2>
+    <p class="keep">해를 등지고 서서 물을 뿌리면,<br>내 그림자 머리에서 42° 떨어진 물방울은 빨강을,<br>40.5° 떨어진 물방울은 보라를 내 눈에 보내요.</p>
+    <p class="more">물을 어디로 뿌리든<br>그 방향에 들어온 물방울만 빛나요.<br>그래서 무지개는 물줄기를 따라 움직이지 않고<br>늘 같은 자리에 떠 있어요.</p>
+    <p class="more more3">해를 높이면 무지개 원의 중심이 땅속으로 내려가서<br>무지개가 낮아지고, 해가 낮으면 높이 떠요.</p>
+  </div>
+  <div class="grp" id="iFlask" hidden>
+    <h2>디트리히와 알파리시의 실험</h2>
+    <p class="keep">14세기 초, 독일의 수도사인<br>프라이베르크의 디트리히와<br>페르시아의 학자 카말 알딘 알파리시는<br>서로를 모른 채 같은 생각을 했어요.<br>물을 가득 채운 둥근 유리병을<br>커다란 빗방울로 삼아 햇빛을 비춰 본 거예요.</p>
+    <p class="more">두 사람은 밝혀냈어요.<br>1차 무지개는 빗방울 안에서<br>두 번 꺾이고 한 번 반사된 빛이고,<br>2차 무지개는 두 번 반사된 빛이라는 것을요.</p>
+    <p class="more more3">입사각을 바꿔 보면<br>돌아 나오는 각이 커지다가<br>어느 각도에서 잠시 멈춰요.<br>그 언저리의 빛이 한 방향으로 몰려서<br>하늘에 밝은 무지개 띠가 생겨요.</p>
+  </div>
+  <div class="grp" id="iField" hidden>
+    <h2>거대 물방울로 무지개 설치하기</h2>
+    <p class="keep">물방울 대신 유리구를 들판에 두었어요.<br>구 하나하나는 딱 한 가지 색만 내 눈에 보내요.<br>어떤 색일지는 그 구가<br>내 그림자 머리에서 몇 도 떨어져 있는지로 정해져요.</p>
+    <p class="keep" id="iArr"></p>
+    <p class="more">걸어 보면 빛나는 구가 바뀌어요.<br>무지개는 늘 나를 따라오는, 나만의 무지개예요.</p>
+  </div>
+</div>
+
+<div id="set" class="panel" aria-label="설정">
+  <div class="grp" id="sSpray">
+    <div class="lab">물 뿌리는 방식</div>
+    <div class="seg row" id="segKind"><button data-v="mist" class="on">고운 안개</button><button data-v="jet">굵은 물줄기</button></div>
+    <div class="lab">각도 안내선</div>
+    <div class="seg row" id="segGuide"><button data-v="on" class="on">보이기</button><button data-v="off">숨기기</button></div>
+  </div>
+  <div class="grp" id="sFlask" hidden>
+    <div class="lab">빛 색깔</div>
+    <div class="seg row" id="segCol"><button data-c="white" class="on">햇빛</button><button data-c="red">빨강</button><button data-c="green">초록</button><button data-c="violet">보라</button></div>
+    <div class="row"><button class="ib" id="goMin">가장 밝은 각도로</button></div>
+  </div>
+  <div class="grp" id="sField" hidden>
+    <div class="grp" id="sCount">
+      <div class="lab">유리구 개수</div>
+      <div class="seg row" id="segN"><button data-n="10000">1만 개</button><button data-n="30000" class="on">3만 개</button><button data-n="60000">6만 개</button></div>
+    </div>
+    <div class="grp" id="gGround" hidden>
+      <div class="lab">지형</div>
+      <div class="seg row" id="segTerr"><button data-t="flat" class="on">평지</button><button data-t="up">오르막</button><button data-t="down">내리막</button><button data-t="mound">둔덕</button></div>
+      <div class="lab">관람대 (눈높이)</div>
+      <div class="seg row" id="segEye"><button data-h="1.6" class="on">땅 1.6m</button><button data-h="3.2">3.2m</button><button data-h="5">5m</button></div>
+      <div class="lab">공 재료</div>
+      <div class="seg row" id="segMat"><button data-m="water" class="on">물 42°</button><button data-m="ice">얼음 46°</button><button data-m="glass">유리 21°</button><button data-m="fluoro">플루오로 55°</button></div>
+    </div>
+    <div class="row"><button class="ib" id="goHome">처음 자리로</button></div>
+  </div>
+  <hr>
+  <div class="row"><button class="ib" id="goFull">전체 화면</button><a class="ib" href="../">프리즘 무지개 →</a></div>
 </div>
 
 <div id="inapp"><div>이 앱 안의 브라우저에서는 제대로 보이지 않아요.<br>⋯ 메뉴에서 <b>'Safari로 열기'</b>를 눌러 주세요.</div></div>
@@ -254,9 +333,9 @@ const skyRGB = (() => {
 
 /* ================= 화면 ================= */
 const cv = document.getElementById('c'), ctx = cv.getContext('2d');
-const bar = document.getElementById('bar'), drawer = document.getElementById('drawer');
+const bar = document.getElementById('bar'), topBar = document.getElementById('top');
 const ang = document.getElementById('ang'), angV = document.getElementById('angV');
-const state = { i: 40, k: 1, bundle: false, col: 'white', mode: 'flask' };
+const state = { i: 40, k: 1, bundle: false, col: 'white', mode: 'spray' };
 let W = 0, H = 0, DPR = 1, L = {}, skyImg = null, dirty = true;
 
 function layout(){
@@ -265,20 +344,21 @@ function layout(){
   const bh = bar.offsetHeight;
   document.documentElement.style.setProperty('--barh', bh + 'px');
   const ah = H - bh; L.ah = ah;
+  const top = topBar.offsetHeight; L.top = top;
+  document.documentElement.style.setProperty('--toph', top + 'px');
   cv.width = W*DPR; cv.height = ah*DPR; cv.style.width = W + 'px'; cv.style.height = ah + 'px';
-  const top = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--sat')) || 0;
-  if (W >= ah * 1.15){
+  if (W >= (ah - top) * 1.15){
     const mw = Math.round(W * 0.63);
-    L.main = { x: 0, y: 0, w: mw, h: ah };
+    L.main = { x: 0, y: top, w: mw, h: ah - top };
     const pw = W - mw, g = 10;
-    L.graph = { x: mw + g, y: g + top, w: pw - 2*g, h: (ah - top) * 0.46 - g };
+    L.graph = { x: mw + g, y: top + g, w: pw - 2*g, h: (ah - top) * 0.46 - g };
     L.sky   = { x: mw + g, y: L.graph.y + L.graph.h + g, w: pw - 2*g, h: ah - (L.graph.y + L.graph.h + g) - g };
   } else {
-    const mh = Math.round(ah * 0.6);
-    L.main = { x: 0, y: 0, w: W, h: mh };
+    const mh = Math.round((ah - top) * 0.6);
+    L.main = { x: 0, y: top, w: W, h: mh };
     const g = 8, bw = (W - 3*g) / 2;
-    L.graph = { x: g, y: mh + 2, w: bw, h: ah - mh - g - 2 };
-    L.sky   = { x: 2*g + bw, y: mh + 2, w: bw, h: ah - mh - g - 2 };
+    L.graph = { x: g, y: top + mh + 2, w: bw, h: ah - top - mh - g - 2 };
+    L.sky   = { x: 2*g + bw, y: top + mh + 2, w: bw, h: ah - top - mh - g - 2 };
   }
   const m = L.main;
   L.R = Math.min(m.w * 0.27, m.h * 0.33);
@@ -464,7 +544,7 @@ function drawMain(){
   // 읽음표
   const fs = Math.round(Math.max(11.5, Math.min(15, Math.min(W, H) * 0.03)));
   ctx.font = `${fs}px 'Gowun Batang', serif`;
-  let y = m.y + fs*1.6 + (parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--sat')) || 0);
+  let y = m.y + fs*1.6;
   const x = m.x + 14;
   const n589 = curN(589), r = Math.asin(Math.sin(state.i*DEG)/n589)/DEG;
   ctx.fillStyle = 'rgba(242,234,217,.95)';
@@ -538,6 +618,7 @@ function drawGraph(){
 function render(){
   ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
   ctx.fillStyle = '#07080c'; ctx.fillRect(0, 0, W, H);
+  if (state.mode === 'spray'){ renderSpray(); return; }
   if (state.mode === 'field'){ renderField(); return; }
   drawMain();
   ctx.setTransform(1, 0, 0, 1, 0, 0);
@@ -588,8 +669,8 @@ const MATS = {
   fluoro: { name: '플루오로카본 액체', n: l => 1.2445 + 2900/(l*l) }
 };
 const FMAX = 90, FNB = Math.round(FMAX/BIN), FTAB = {};
-function fieldTable(){
-  const key = FIELD.arr === 'design' ? 'glass' : FIELD.arr === 'ground' ? FIELD.mat : 'water';
+function fieldTable(force){
+  const key = force || (FIELD.arr === 'design' ? 'glass' : FIELD.arr === 'ground' ? FIELD.mat : 'water');
   if (FTAB[key]) return FTAB[key];
   const nf = MATS[key].n;
   const L = Array.from({length: 40}, (_, i) => 400 + 300*(i + 0.5)/40);
@@ -1170,8 +1251,7 @@ function renderField(){
   // 읽음표
   const fs = Math.round(Math.max(11.5, Math.min(15, Math.min(W, H) * 0.03)));
   ctx.font = `${fs}px 'Gowun Batang', serif`;
-  const top = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--sat')) || 0;
-  let y = fs*1.6 + top;
+  let y = fs*1.6 + L.top;
   const moved = Math.hypot(eye[0], eye[2]);
   ctx.fillStyle = 'rgba(255,250,240,.95)'; ctx.shadowColor = 'rgba(0,0,0,.6)'; ctx.shadowBlur = 6;
   const sn = sunNow();
@@ -1236,8 +1316,129 @@ function loop(now){
       dirty = true;
     }
   }
+  if (state.mode === 'spray'){ updateSpray(dt); if (SPRAY.parts.length || SPRAY.hold) dirty = true; }
   if (dirty){ dirty = false; render(); }
   requestAnimationFrame(loop);
+}
+
+/* ================= 물 뿌리기 ================= */
+// 해를 등지고 서서 정원 호스로 물을 뿌림. 물방울 하나하나의 색은 해의 반대쪽에서 잰 각으로 정해짐
+const SPRAY = { e: 30, parts: [], hold: null, guide: true, kind: 'mist', acc: 0 };
+const SP_EYE = [0, 1.6, 0], SP_NOZ = [0.3, 1.12, 0.45], SP_PITCH = -12*DEG;
+function sprayCam(){
+  const w = W, h = L.ah, f = h / (2*Math.tan(37*DEG)), cp = Math.cos(SP_PITCH), sp = Math.sin(SP_PITCH);
+  const fw = [0, sp, cp], rt = [1, 0, 0], up = [0, cp, -sp];
+  const proj = p => { const d = [p[0]-SP_EYE[0], p[1]-SP_EYE[1], p[2]-SP_EYE[2]], z = d[0]*fw[0] + d[1]*fw[1] + d[2]*fw[2];
+    if (z < 0.05) return null; return [w/2 + f*(d[0]*rt[0] + d[1]*rt[1] + d[2]*rt[2])/z, h/2 - f*(d[0]*up[0] + d[1]*up[1] + d[2]*up[2])/z, z]; };
+  const projDir = d => { const z = d[0]*fw[0] + d[1]*fw[1] + d[2]*fw[2]; if (z < 0.02) return null;
+    return [w/2 + f*(d[0]*rt[0] + d[1]*rt[1] + d[2]*rt[2])/z, h/2 - f*(d[0]*up[0] + d[1]*up[1] + d[2]*up[2])/z]; };
+  const ray = (sx, sy) => { const a = (sx - w/2)/f, b = -(sy - h/2)/f; const d = [fw[0] + rt[0]*a + up[0]*b, fw[1] + rt[1]*a + up[1]*b, fw[2] + rt[2]*a + up[2]*b]; const l = Math.hypot(...d); return d.map(v => v/l); };
+  return { w, h, f, fw, rt, up, proj, projDir, ray };
+}
+const spAnti = () => { const e = SPRAY.e*DEG; return [0, -Math.sin(e), Math.cos(e)]; };
+function sprayEmit(n, sx, sy){
+  const C = sprayCam(), d = C.ray(sx, sy);
+  let dist = 5.5; if (d[1] < -0.01) dist = Math.min(dist, SP_EYE[1] / -d[1]);
+  const T = [SP_EYE[0] + d[0]*dist, SP_EYE[1] + d[1]*dist, SP_EYE[2] + d[2]*dist];
+  const D0 = [T[0] - SP_NOZ[0], T[1] - SP_NOZ[1], T[2] - SP_NOZ[2]], L0 = Math.hypot(...D0);
+  const mist = SPRAY.kind === 'mist', spread = (mist ? 7 : 2.2)*DEG;
+  for (let k = 0; k < n && SPRAY.parts.length < 16000; k++){
+    // 날아가는 동안 떨어지는 만큼 위로 겨눔
+    const sp0 = mist ? 8 : 10, g0 = mist ? 1.2 : 9.8, tt = L0/sp0;
+    const aim = [D0[0]/L0, D0[1]/L0 + 0.5*g0*tt*tt/L0, D0[2]/L0];
+    const u = Math.random()*2*Math.PI, r = spread*Math.sqrt(Math.random());
+    const v = [aim[0] + Math.cos(u)*r, aim[1] + Math.sin(u)*r, aim[2] + (Math.random() - 0.5)*r];
+    const lv = Math.hypot(...v), sp = sp0 * (0.8 + Math.random()*0.4);
+    SPRAY.parts.push({ p: SP_NOZ.slice(), v: [v[0]/lv*sp, v[1]/lv*sp, v[2]/lv*sp], life: (mist ? 2.6 : 2.0) + Math.random()*1.2 });
+  }
+}
+function updateSpray(dt){
+  if (SPRAY.hold){
+    SPRAY.acc += dt * (SPRAY.kind === 'mist' ? 2400 : 1000);
+    const n = SPRAY.acc | 0; SPRAY.acc -= n;
+    if (n) sprayEmit(n, SPRAY.hold.x, SPRAY.hold.y);
+  }
+  const k = SPRAY.kind === 'mist' ? 0.55 : 0.2, damp = Math.exp(-k*dt), wind = [0.35, 0, 0];
+  const out = [];
+  for (const q of SPRAY.parts){
+    q.v[1] -= (SPRAY.kind === 'mist' ? 1.2 : 9.8)*dt;
+    for (let i = 0; i < 3; i++){ q.v[i] = wind[i] + (q.v[i] - wind[i])*damp; q.p[i] += q.v[i]*dt; }
+    q.life -= dt;
+    if (q.life > 0 && q.p[1] > 0.01) out.push(q);
+  }
+  SPRAY.parts = out;
+}
+let SP_CSS = null;
+function renderSpray(){
+  const C = sprayCam(), { w, h, f } = C, A = spAnti();
+  // 맑은 하늘과 잔디
+  const hy = h/2 + f*Math.tan(SP_PITCH);
+  // 비 갠 뒤 어둑한 하늘과 먼 숲 — 무지개가 잘 보이는 배경
+  const sky = ctx.createLinearGradient(0, 0, 0, Math.max(1, hy));
+  sky.addColorStop(0, '#2c3646'); sky.addColorStop(1, '#6f7c8a');
+  ctx.fillStyle = sky; ctx.fillRect(0, 0, w, Math.max(0, hy));
+  ctx.fillStyle = '#1b2a1c'; ctx.beginPath(); ctx.moveTo(0, hy);
+  for (let x = 0; x <= w + 20; x += 18){ const el = (5 + 3.2*Math.sin(x*0.013) + 2.2*Math.sin(x*0.041 + 1) + 1.2*Math.sin(x*0.11))*DEG; ctx.lineTo(x, hy - f*Math.tan(el)); }
+  ctx.lineTo(w + 20, hy); ctx.closePath(); ctx.fill();
+  const gr = ctx.createLinearGradient(0, hy, 0, h);
+  gr.addColorStop(0, '#4d6a35'); gr.addColorStop(1, '#2d4419');
+  ctx.fillStyle = gr; ctx.fillRect(0, hy, w, h - hy);
+  // 풀결
+  ctx.strokeStyle = 'rgba(30,50,15,.25)'; ctx.lineWidth = 1; ctx.beginPath();
+  for (let z = 1; z < 60; z *= 1.18){ const a = C.proj([-30, 0, z]), b = C.proj([30, 0, z]); if (a && b){ ctx.moveTo(a[0], a[1]); ctx.lineTo(b[0], b[1]); } }
+  ctx.stroke();
+  // 내 그림자 (머리 끝이 해의 반대쪽 점)
+  const e = SPRAY.e*DEG, headZ = SP_EYE[1] / Math.tan(e);
+  const sh = [[-0.25, 0, 0.3], [0.25, 0, 0.3], [0.2, 0, headZ - 0.2], [-0.2, 0, headZ - 0.2]].map(C.proj);
+  if (sh.every(Boolean)){ ctx.fillStyle = 'rgba(20,30,12,.42)'; ctx.beginPath(); sh.forEach((q, i) => i ? ctx.lineTo(q[0], q[1]) : ctx.moveTo(q[0], q[1])); ctx.fill();
+    const hq = C.proj([0, 0, headZ]); if (hq){ ctx.beginPath(); ctx.ellipse(hq[0], hq[1], f*0.13/hq[2], f*0.13/hq[2]*Math.sin(e)*1.4, 0, 0, 7); ctx.fill(); } }
+  // 각도 안내선: 그림자 머리를 중심으로 42°(1차)와 51°(2차)
+  const ap = C.projDir(A);
+  if (SPRAY.guide){
+    const up = [0, Math.cos(e), Math.sin(e)], side = [1, 0, 0];
+    for (const [deg, a] of [[41.3, .55], [51, .3]]){
+      ctx.setLineDash([5, 7]); ctx.strokeStyle = `rgba(255,255,255,${a})`; ctx.lineWidth = 1.2; ctx.beginPath(); let pen = false;
+      for (let k = 0; k <= 180; k++){
+        const ph = k/180*2*Math.PI, t = deg*DEG;
+        const d = [A[0]*Math.cos(t) + (side[0]*Math.cos(ph) + up[0]*Math.sin(ph))*Math.sin(t), A[1]*Math.cos(t) + (side[1]*Math.cos(ph) + up[1]*Math.sin(ph))*Math.sin(t), A[2]*Math.cos(t) + (side[2]*Math.cos(ph) + up[2]*Math.sin(ph))*Math.sin(t)];
+        const q = C.projDir(d); if (q){ pen ? ctx.lineTo(q[0], q[1]) : ctx.moveTo(q[0], q[1]); pen = true; } else pen = false;
+      }
+      ctx.stroke(); ctx.setLineDash([]);
+    }
+    if (ap){ ctx.strokeStyle = 'rgba(255,255,255,.7)'; ctx.lineWidth = 1.2; ctx.beginPath(); ctx.moveTo(ap[0] - 7, ap[1]); ctx.lineTo(ap[0] + 7, ap[1]); ctx.moveTo(ap[0], ap[1] - 7); ctx.lineTo(ap[0], ap[1] + 7); ctx.stroke(); }
+  }
+  // 물방울
+  const T = fieldTable('water');
+  if (!SP_CSS) SP_CSS = T.col.map(c => [0.3, 0.55, 0.8, 1].map(m => `rgba(${c[0]},${c[1]},${c[2]},${(c[3]*m).toFixed(3)})`));
+  ctx.globalCompositeOperation = 'lighter';
+  const mist = SPRAY.kind === 'mist';
+  for (const q of SPRAY.parts){
+    const s = C.proj(q.p); if (!s) continue;
+    const d = [q.p[0]-SP_EYE[0], q.p[1]-SP_EYE[1], q.p[2]-SP_EYE[2]], l = Math.hypot(...d);
+    const th = Math.acos(Math.max(-1, Math.min(1, (d[0]*A[0] + d[1]*A[1] + d[2]*A[2])/l))) / DEG;
+    const sz = Math.max(1.5, Math.min(4, f*(mist ? 0.011 : 0.014)/s[2]));
+    const fade = Math.min(1, q.life*1.5), lv = Math.min(3, (fade*4)|0);
+    ctx.fillStyle = 'rgba(235,242,250,0.05)'; ctx.fillRect(s[0] - sz/2, s[1] - sz/2, sz, sz);   // 물안개 자체
+    if (th < FMAX){ const css = SP_CSS[(th/BIN)|0][lv]; ctx.fillStyle = css; ctx.fillRect(s[0] - sz/2, s[1] - sz/2, sz, sz); }
+  }
+  ctx.globalCompositeOperation = 'source-over';
+  // 호스와 분사구
+  const nz = C.proj(SP_NOZ);
+  if (nz){
+    ctx.strokeStyle = '#2f5d3a'; ctx.lineWidth = Math.max(6, f*0.03/nz[2]); ctx.lineCap = 'round';
+    ctx.beginPath(); ctx.moveTo(w*0.86, h + 10); ctx.quadraticCurveTo(w*0.8, h*0.9, nz[0], nz[1]); ctx.stroke();
+    ctx.fillStyle = '#b8b2a6'; ctx.beginPath(); ctx.arc(nz[0], nz[1], Math.max(5, f*0.025/nz[2]), 0, 7); ctx.fill();
+  }
+  // 읽음표
+  const fs = Math.round(Math.max(11.5, Math.min(15, Math.min(W, H) * 0.03)));
+  ctx.font = `${fs}px 'Gowun Batang', serif`; ctx.shadowColor = 'rgba(0,0,0,.65)'; ctx.shadowBlur = 6;
+  let y = L.top + fs*1.6;
+  ctx.fillStyle = 'rgba(255,250,240,.96)';
+  ctx.fillText(`해 높이 ${SPRAY.e}° · 해를 등지고 서 있어요`, 14, y); y += fs*1.5;
+  ctx.fillStyle = 'rgba(255,250,240,.82)';
+  ctx.fillText(SPRAY.parts.length ? `물방울 ${SPRAY.parts.length.toLocaleString()}개` : '아무 곳이나 눌러 물을 뿌려 보세요', 14, y); y += fs*1.5;
+  if (SPRAY.guide){ ctx.fillStyle = 'rgba(255,250,240,.65)'; ctx.fillText('+ 내 그림자 머리 · 점선(42°) 언저리로 뿌려 보세요', 14, y); }
+  ctx.shadowBlur = 0;
 }
 
 /* ================= 조작 ================= */
@@ -1251,13 +1452,15 @@ let drag = false;
 function yToI(py){ const b = (L.cy - py) / L.R; return Math.asin(Math.max(0, Math.min(0.9998, b))) / DEG; }
 let look = null;
 cv.addEventListener('pointerdown', e => {
-  drawer.classList.remove('open');
+  closePanels();
+  if (state.mode === 'spray'){ SPRAY.hold = { x: e.offsetX, y: e.offsetY }; sprayEmit(SPRAY.kind === 'mist' ? 260 : 120, e.offsetX, e.offsetY); cv.setPointerCapture(e.pointerId); dirty = true; return; }
   if (state.mode === 'field'){ look = { x: e.offsetX, y: e.offsetY }; cv.setPointerCapture(e.pointerId); return; }
   const m = L.main;
   if (e.offsetX > m.x + m.w || e.offsetY > m.y + m.h) return;
   drag = true; cv.setPointerCapture(e.pointerId); setI(yToI(e.offsetY));
 });
 cv.addEventListener('pointermove', e => {
+  if (SPRAY.hold && state.mode === 'spray'){ SPRAY.hold = { x: e.offsetX, y: e.offsetY }; return; }
   if (pinch0) return;
   if (look && FIELD.view === 'drone'){
     FIELD.dYaw += (e.offsetX - look.x) * 0.006;
@@ -1272,7 +1475,7 @@ cv.addEventListener('pointermove', e => {
   }
   if (drag) setI(yToI(e.offsetY));
 });
-cv.addEventListener('pointerup', () => { drag = false; look = null; });
+cv.addEventListener('pointerup', () => { drag = false; look = null; SPRAY.hold = null; });
 cv.addEventListener('wheel', e => { if (state.mode === 'field' && FIELD.view === 'drone'){ e.preventDefault(); FIELD.dDist = Math.max(1.5, Math.min(500, FIELD.dDist * Math.exp(e.deltaY*0.0012))); dirty = true; } }, { passive: false });
 // 두 손가락 벌리기·오므리기로 가까이·멀리
 const touches = new Map(); let pinch0 = null;
@@ -1286,45 +1489,114 @@ cv.addEventListener('pointermove', e => {
 });
 const endT = e => { touches.delete(e.pointerId); if (touches.size < 2) pinch0 = null; };
 cv.addEventListener('pointerup', endT); cv.addEventListener('pointercancel', endT);
-cv.addEventListener('pointercancel', () => { drag = false; look = null; });
+cv.addEventListener('pointercancel', () => { drag = false; look = null; SPRAY.hold = null; });
 
-// 모드
-const segMode = document.getElementById('segMode');
-segMode.addEventListener('click', e => {
-  const b = e.target.closest('button'); if (!b) return;
-  segMode.querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b));
-  state.mode = b.dataset.m;
-  const fld = state.mode === 'field';
-  document.getElementById('gFlask').hidden = fld; document.getElementById('gField').hidden = !fld;
-  document.getElementById('dFlask').hidden = fld; document.getElementById('dField').hidden = !fld;
-  document.getElementById('pad').hidden = !fld;
-  drawer.classList.remove('open');
-  if (fld && !FIELD.pos) buildField();
-  refreshJumps();
-  layout();
+// ---------- 화면 구성: 탭 → 아래 조작 줄 → 떠 있는 판 ----------
+const panels = { info: document.getElementById('info'), set: document.getElementById('set'), sheet: document.getElementById('sheet') };
+const btnInfo = document.getElementById('btnInfo'), btnSet = document.getElementById('btnSet'), btnArr = document.getElementById('btnArr');
+function syncPanelButtons(){
+  btnInfo.classList.toggle('on', panels.info.classList.contains('open'));
+  btnSet.classList.toggle('on', panels.set.classList.contains('open'));
+  btnArr.classList.toggle('on', panels.sheet.classList.contains('open'));
+}
+function togglePanel(name){
+  const was = panels[name].classList.contains('open');
+  for (const el of Object.values(panels)) el.classList.remove('open');
+  if (!was) panels[name].classList.add('open');
+  syncPanelButtons();
+}
+function closePanels(){ for (const el of Object.values(panels)) el.classList.remove('open'); syncPanelButtons(); }
+btnInfo.addEventListener('click', e => { e.stopPropagation(); togglePanel('info'); });
+btnSet.addEventListener('click', e => { e.stopPropagation(); togglePanel('set'); });
+btnArr.addEventListener('click', e => { e.stopPropagation(); togglePanel('sheet'); });
+const show = (id, on) => { document.getElementById(id).hidden = !on; };
+const pad = document.getElementById('pad'), jumps = document.getElementById('jumps');
+function setMode(m){
+  state.mode = m;
+  document.querySelectorAll('#tabs button').forEach(b => b.classList.toggle('on', b.dataset.m === m));
+  for (const [k, ids] of Object.entries({ spray: ['gSpray', 'iSpray', 'sSpray'], flask: ['gFlask', 'iFlask', 'sFlask'], field: ['gField', 'iField', 'sField'] }))
+    for (const id of ids) show(id, k === m);
+  pad.hidden = m !== 'field';
+  if (m === 'field' && !FIELD.pos) buildField();
+  if (m !== 'spray') SPRAY.hold = null;
+  closePanels(); syncFieldUI(); refreshJumps(); layout();
+}
+document.getElementById('tabs').addEventListener('click', e => { const b = e.target.closest('button'); if (b) setMode(b.dataset.m); });
+
+// ---------- 1. 물 뿌리기 ----------
+const sprE = document.getElementById('sprE'), sprV = document.getElementById('sprV');
+sprE.addEventListener('input', () => { SPRAY.e = +sprE.value; sprV.textContent = SPRAY.e + '°'; dirty = true; });
+function segBind(id, attr, fn){
+  document.getElementById(id).addEventListener('click', e => {
+    const b = e.target.closest('button'); if (!b) return;
+    document.querySelectorAll('#' + id + ' button').forEach(x => x.classList.toggle('on', x === b));
+    fn(b.dataset[attr]);
+  });
+}
+segBind('segKind', 'v', v => { SPRAY.kind = v; });
+segBind('segGuide', 'v', v => { SPRAY.guide = v === 'on'; dirty = true; });
+
+// ---------- 2. 물병 실험 ----------
+segBind('segK', 'k', v => { state.k = +v; buildSky(); dirty = true; });
+segBind('segCol', 'c', v => { state.col = v; dirty = true; });
+const tgB = document.getElementById('tgBundle');
+tgB.addEventListener('click', () => { state.bundle = !state.bundle; tgB.classList.toggle('on', state.bundle); dirty = true; });
+document.getElementById('goMin').addEventListener('click', () => {
+  closePanels();
+  const k = state.k === 2 ? 2 : 1, target = iMin(curN(589), k), start = state.i, t0 = performance.now();
+  const step = now => { const u = Math.min(1, (now - t0) / 700), s = u*u*(3 - 2*u); setI(start + (target - start)*s); if (u < 1) requestAnimationFrame(step); };
+  requestAnimationFrame(step);
 });
+
+// ---------- 3. 들판 설치 ----------
+const ARR_NAMES = { sky: '하늘 가득', cone: '원뿔 틀', tube: '유리관 아치', ground: '풀밭 위' };
+const ARR_INFO = {
+  sky: '<b>하늘 가득</b> — 빗줄기처럼 허공에 흩어 둔 구.<br>어느 자리, 어느 시각에도 무지개가 생겨요.',
+  cone: '<b>원뿔 틀</b> — 처음 자리의 눈에 맞춰 세운 구.<br>그 자리에서만 완벽하고, 몇 걸음이면 흩어져요.',
+  tube: '<b>유리관 아치</b> — 물 채운 관 12줄을 한 판 위 동심원으로.<br>매끈한 줄무늬 무지개, 대신 1분이면 기울어요.',
+  ground: '<b>풀밭 위</b> — 땅에 깐 구슬의 이슬 무지개.<br>지형·관람대·공 재료를 ⚙에서 바꿔 보세요.',
+  design: '<b>구슬 1만 개</b> — 지름 4cm 유리구슬, 평지, 10월 말 정오.<br>A 완전한 고리 · B 오래 가는 고리 · C 하루 종일.'
+};
 const sunE = document.getElementById('sunE'), sunV = document.getElementById('sunV');
+const tMin = document.getElementById('tMin'), tV = document.getElementById('tV');
 sunE.addEventListener('input', () => {
   FIELD.e = +sunE.value; sunV.textContent = FIELD.e + '°';
   if (FIELD.arr === 'cone' || FIELD.arr === 'tube') buildField(); else dirty = true;
 });
-document.getElementById('segArr').addEventListener('click', e => {
-  const b = e.target.closest('button'); if (!b) return;
-  document.querySelectorAll('#segArr button').forEach(x => x.classList.toggle('on', x === b));
-  FIELD.arr = b.dataset.a; syncGroundUI(); FIELD.pitch = (isFlatLike() ? -42 : 6) * DEG; FIELD.dT = droneTarget(); FIELD.dDist = 190; FIELD.dYaw = 0.75; FIELD.dPitch = -24*DEG; buildField(); refreshJumps();
-});
-const tMin = document.getElementById('tMin'), tV = document.getElementById('tV');
 tMin.addEventListener('input', () => {
   FIELD.tmin = +tMin.value;
   tV.textContent = FIELD.arr === 'design' ? clockLabel(FIELD.tmin).split(' ')[0] : (FIELD.tmin > 0 ? '+' : '') + FIELD.tmin + '분';
   dirty = true;
 });
-document.getElementById('segDes').addEventListener('click', e => {
-  const b = e.target.closest('button'); if (!b) return;
-  document.querySelectorAll('#segDes button').forEach(x => x.classList.toggle('on', x === b));
-  FIELD.design = b.dataset.d; syncDesignUI(); FIELD.dT = droneTarget(); buildField(); refreshJumps();
+function syncFieldUI(){
+  const d = FIELD.arr === 'design', D = DESIGNS[FIELD.design];
+  document.getElementById('arrName').textContent = d ? `구슬 1만 개 · ${FIELD.design}` : ARR_NAMES[FIELD.arr];
+  document.querySelectorAll('#sheet .opt').forEach(o => o.classList.toggle('on', o.dataset.a === FIELD.arr && (!d || o.dataset.d === FIELD.design)));
+  show('slSun', !d);
+  document.getElementById('tLab').textContent = d ? '시각' : '시간 흐름';
+  tMin.min = d ? -D.span : -30; tMin.max = d ? D.span : 30; tMin.step = d ? D.step : 1;
+  FIELD.tmin = 0; tMin.value = 0; tV.textContent = d ? '남중' : '0분';
+  show('sCount', ['sky', 'cone', 'ground'].includes(FIELD.arr));
+  show('gGround', FIELD.arr === 'ground');
+  document.getElementById('iArr').innerHTML = ARR_INFO[FIELD.arr];
+}
+function setArr(a, d){
+  FIELD.arr = a; if (d) FIELD.design = d;
+  FIELD.eye = [0, EYE_H, 0]; FIELD.yaw = 0; FIELD.pitch = (isFlatLike() ? -42 : 6) * DEG;
+  FIELD.dT = droneTarget(); FIELD.dDist = isFlatLike() ? 40 : 190; FIELD.dYaw = 0.75; FIELD.dPitch = -24*DEG;
+  syncFieldUI(); buildField(); refreshJumps(); closePanels();
+}
+document.getElementById('sheet').addEventListener('click', e => { const o = e.target.closest('.opt'); if (o) setArr(o.dataset.a, o.dataset.d); });
+segBind('segView', 'v', v => {
+  FIELD.view = v;
+  if (v === 'drone' && !FIELD.dT) FIELD.dT = droneTarget();
+  refreshJumps(); dirty = true;
 });
-const tgPlan = document.getElementById('tgPlan'), jumps = document.getElementById('jumps'), pad = document.getElementById('pad');
+segBind('segTerr', 't', v => { FIELD.terr = v; buildField(); });
+segBind('segEye', 'h', v => { FIELD.eyeH = +v; placeEye(); dirty = true; });
+segBind('segMat', 'm', v => { FIELD.mat = v; dirty = true; });
+segBind('segN', 'n', v => { FIELD.n = +v; buildField(); });
+document.getElementById('goHome').addEventListener('click', () => { FIELD.eye = [0, EYE_H, 0]; placeEye(); FIELD.yaw = 0; FIELD.pitch = (isFlatLike() ? -42 : 6) * DEG; FIELD.dT = droneTarget(); dirty = true; closePanels(); });
 function flyTo(T, dist, yaw, pitch){
   FIELD.anim = { t0: performance.now(), from: { T: (FIELD.dT || droneTarget()).slice(), dist: FIELD.dDist, yaw: FIELD.dYaw, pitch: FIELD.dPitch }, to: { T, dist, yaw, pitch } };
   dirty = true;
@@ -1335,7 +1607,7 @@ function nearestSphere(q){
   return best < 0 ? q : [P[best*3], P[best*3+1], P[best*3+2]];
 }
 function jumpList(){
-  const L = [['전체', () => flyTo(droneTarget(), 190, 0.75, -24*DEG)], ['관람 자리', () => flyTo([0, eyeHeight() - 0.3, 2], 7, 0.35, -10*DEG)]];
+  const L = [['전체', () => flyTo(droneTarget(), isFlatLike() ? 40 : 190, 0.75, -24*DEG)], ['관람 자리', () => flyTo([0, eyeHeight() - 0.3, 2], 7, 0.35, -10*DEG)]];
   if (FIELD.arr === 'tube'){
     const N0 = planNumbers();
     L.push(['아치 다리', () => flyTo([N0.leg[0] - 1.5, 1.2, N0.leg[2]], 9, -0.9, -12*DEG)]);
@@ -1363,43 +1635,6 @@ function refreshJumps(){
   jumps.innerHTML = '';
   for (const [t, fn] of jumpList()){ const b = document.createElement('button'); b.textContent = t; b.onclick = fn; jumps.appendChild(b); }
 }
-tgPlan.addEventListener('click', () => {
-  FIELD.view = FIELD.view === 'drone' ? 'walk' : 'drone'; tgPlan.classList.toggle('on', FIELD.view === 'drone');
-  if (FIELD.view === 'drone' && !FIELD.dT) FIELD.dT = droneTarget();
-  refreshJumps(); dirty = true;
-});
-function syncDesignUI(){
-  const d = FIELD.arr === 'design';
-  document.getElementById('segDes').hidden = !d;
-  document.getElementById('slSun').hidden = d;
-  const D = DESIGNS[FIELD.design];
-  tMin.min = d ? -D.span : -30; tMin.max = d ? D.span : 30; tMin.step = d ? D.step : 1;
-  FIELD.tmin = 0; tMin.value = 0; tV.textContent = d ? '남중' : '0분';
-}
-function syncGroundUI(){
-  syncDesignUI();
-  const g = FIELD.arr === 'ground';
-  document.getElementById('gGround').hidden = !g;
-  document.getElementById('dField').classList.toggle('ground', g);
-}
-function segBind(id, attr, fn){
-  document.getElementById(id).addEventListener('click', e => {
-    const b = e.target.closest('button'); if (!b) return;
-    document.querySelectorAll('#' + id + ' button').forEach(x => x.classList.toggle('on', x === b));
-    fn(b.dataset[attr]);
-  });
-}
-segBind('segTerr', 't', v => { FIELD.terr = v; buildField(); });
-segBind('segEye', 'h', v => { FIELD.eyeH = +v; placeEye(); dirty = true; });
-segBind('segMat', 'm', v => { FIELD.mat = v; dirty = true; });
-document.getElementById('segN').addEventListener('click', e => {
-  const b = e.target.closest('button'); if (!b) return;
-  document.querySelectorAll('#segN button').forEach(x => x.classList.toggle('on', x === b));
-  FIELD.n = +b.dataset.n; buildField();
-});
-document.getElementById('goHome').addEventListener('click', () => { FIELD.eye = [0, EYE_H, 0]; placeEye(); FIELD.yaw = 0; FIELD.pitch = (isFlatLike() ? -42 : 6) * DEG; dirty = true; drawer.classList.remove('open'); });
-document.getElementById('goFull2').addEventListener('click', () => document.getElementById('goFull').click());
-// 걷기: 버튼을 누르고 있는 동안, 키보드 화살표·WASD
 document.querySelectorAll('#pad button').forEach(btn => {
   const d = btn.dataset.d;
   btn.addEventListener('pointerdown', e => { e.preventDefault(); FIELD.move[d] = true; btn.classList.add('on'); btn.setPointerCapture(e.pointerId); });
@@ -1410,26 +1645,9 @@ const KEYS = { ArrowUp: 'f', KeyW: 'f', ArrowDown: 'b', KeyS: 'b', ArrowLeft: 'l
 window.addEventListener('keydown', e => { if (state.mode === 'field' && KEYS[e.code]){ FIELD.move[KEYS[e.code]] = true; e.preventDefault(); } });
 window.addEventListener('keyup', e => { if (KEYS[e.code]) FIELD.move[KEYS[e.code]] = false; });
 
-document.getElementById('segK').addEventListener('click', e => {
-  const b = e.target.closest('button'); if (!b) return;
-  document.querySelectorAll('#segK button').forEach(x => x.classList.toggle('on', x === b));
-  state.k = +b.dataset.k; buildSky(); dirty = true;
-});
-document.getElementById('segCol').addEventListener('click', e => {
-  const b = e.target.closest('button'); if (!b) return;
-  document.querySelectorAll('#segCol button').forEach(x => x.classList.toggle('on', x === b));
-  state.col = b.dataset.c; dirty = true;
-});
-const tgB = document.getElementById('tgBundle');
-tgB.addEventListener('click', () => { state.bundle = !state.bundle; tgB.classList.toggle('on', state.bundle); dirty = true; });
-document.getElementById('btnInfo').addEventListener('click', e => { e.stopPropagation(); drawer.classList.toggle('open'); });
-document.getElementById('goMin').addEventListener('click', () => {
-  const k = state.k === 2 ? 2 : 1, target = iMin(curN(589), k), start = state.i, t0 = performance.now();
-  const step = now => { const u = Math.min(1, (now - t0) / 700), s = u*u*(3 - 2*u); setI(start + (target - start)*s); if (u < 1) requestAnimationFrame(step); };
-  requestAnimationFrame(step);
-});
+// ---------- 공통 ----------
 const goFull = document.getElementById('goFull');
-if (!(document.documentElement.requestFullscreen || document.documentElement.webkitRequestFullscreen)){ goFull.style.display = 'none'; document.getElementById('goFull2').style.display = 'none'; }
+if (!(document.documentElement.requestFullscreen || document.documentElement.webkitRequestFullscreen)) goFull.style.display = 'none';
 goFull.addEventListener('click', async () => {
   const d = document, el = d.documentElement;
   try {
@@ -1441,7 +1659,7 @@ goFull.addEventListener('click', async () => {
 window.addEventListener('resize', layout);
 if (window.visualViewport) window.visualViewport.addEventListener('resize', layout);
 if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => { dirty = true; });
-layout(); setI(40);
+layout(); setI(40); setMode('spray');
 requestAnimationFrame(loop);
 window.__ready = true;
 })();
